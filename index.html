@@ -1255,6 +1255,13 @@ document.addEventListener("visibilitychange",function(){
   if(!document.hidden){ planifier(); if(el("conn").dataset.s!=="live") connecter(); }
 });
 
+/* changer de salon (ou ouvrir le lien du témoin depuis une page déjà ouverte)
+   doit repartir à neuf, sinon on affiche les données du salon précédent */
+addEventListener("hashchange",function(){
+  var h=hash();
+  if((h.r&&h.r!==room)||((h.m==="1")!==maman)) location.reload();
+});
+
 demarrage();
 })();
 </script>
