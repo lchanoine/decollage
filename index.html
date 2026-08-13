@@ -938,9 +938,11 @@ function rendreMenage(){
     el("vListe").innerHTML='<div class="vide"><div class="g">'+(fini?"✨":"👍")+'</div>'+
       '<h2>'+(fini?"Liste passée au complet.":"Ça suffit pour à soir.")+'</h2>'+
       '<p>'+menageVus+' tâche'+(menageVus>1?"s":"")+' revue'+(menageVus>1?"s":"")+'.'+
-      (fini?'':' Le reste attendra — rien ne presse.')+'</p>'+
-      '<button class="btn gris" id="mFin" style="margin-top:16px">Revenir à la liste</button></div>';
+      (fini?'':' Tu peux t\'arrêter là — ou continuer si t\'es lancé.')+'</p>'+
+      (fini?'':'<button class="btn plein" id="mPlus" style="margin-top:16px">Continuer</button>')+
+      '<button class="btn gris" id="mFin" style="margin-top:8px">Revenir à la liste</button></div>';
     el("mFin").onclick=function(){ menage=false; menageVus=0; rendreListe(); };
+    if(el("mPlus")) el("mPlus").onclick=function(){ menageVus=0; rendreMenage(); };
     return;
   }
   var x=f[0];
