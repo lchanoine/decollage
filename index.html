@@ -1133,20 +1133,54 @@ function rendreSoir(){
   if(el("bSem")) el("bSem").onclick=noteSemaine;
 }
 
+/* Choisir pour demain : tout est accessible, mais l'ordre fait le travail.
+   Les plus pertinentes d'abord, et un champ de recherche pour aller droit au
+   but quand tu sais déjà ce que tu cherches. */
 function choisir(d){
-  var c=prochaines(16);
-  modale('<h3>Ajouter à demain</h3><div style="max-height:56vh;overflow:auto">'+
-    c.map(function(x){ return '<div class="tache" data-pick="'+esc(x.id)+'"><div class="corps">'+
-      '<div class="txt">'+esc(x.t)+'</div><div class="ss"><span>'+hm(x.m||15)+'</span><span>'+esc(x.c||"")+'</span></div>'+
-      '</div></div>'; }).join("")+'</div>',
+  var tous=candidats().sort(function(a,b){ return scorer(b)-scorer(a); });
+
+  modale('<h3>Ajouter à demain</h3>'+
+    '<input class="champ" id="chQ" placeholder="🔎 chercher…" autocomplete="off">'+
+    '<div id="chList" style="max-height:52vh;overflow:auto;margin:0 -2px"></div>'+
+    '<div class="mini" id="chNb"></div>',
     function(box){
-      Array.prototype.forEach.call(box.querySelectorAll("[data-pick]"),function(n){
-        n.onclick=function(){
-          var j=(db.jours||{})[d]||{}, p=(j.plan||[]).slice();
-          if(p.indexOf(n.dataset.pick)<0&&p.length<3) p.push(n.dataset.pick);
-          put("/jours/"+d+"/plan",p).then(function(){ fermer(); contrat(n.dataset.pick); });
-        };
-      });
+      var q=box.querySelector("#chQ"), zone=box.querySelector("#chList");
+
+      function normal(s){
+        /* sans accents : chercher « electro » doit trouver « électros » */
+        return (s||"").toLowerCase().replace(/[àâä]/g,"a").replace(/[éèêë]/g,"e").replace(/[îï]/g,"i").replace(/[ôö]/g,"o").replace(/[ùûü]/g,"u").replace(/ç/g,"c");
+      }
+      function dessiner(){
+        var f=normal(q.value).trim();
+        var sel=tous.filter(function(x){
+          return !f || normal(x.t).indexOf(f)>=0 || normal(x.c).indexOf(f)>=0;
+        });
+        zone.innerHTML = sel.length
+          ? sel.map(function(x){
+              var p=x.parent?T()[x.parent]:null;
+              return '<div class="tache" data-pick="'+esc(x.id)+'"><div class="corps">'+
+                '<div class="txt">'+esc(x.t)+'</div><div class="ss">'+
+                '<span>'+hm(x.m||15)+'</span><span>'+esc(x.c||"")+'</span>'+
+                (p?'<span style="color:var(--flamme)">🧱 '+esc(p.t)+'</span>':'')+
+                (estChantier(x)?'<span style="color:var(--flamme)">à découper</span>':'')+
+                '</div></div></div>';
+            }).join("")
+          : '<div class="slot">rien qui correspond</div>';
+        box.querySelector("#chNb").textContent = sel.length+" tâche"+(sel.length>1?"s":"")+
+          (f?" trouvée"+(sel.length>1?"s":""):" au choix — les plus utiles en premier");
+        brancher();
+      }
+      function brancher(){
+        Array.prototype.forEach.call(zone.querySelectorAll("[data-pick]"),function(n){
+          n.onclick=function(){
+            var j=(db.jours||{})[d]||{}, p=(j.plan||[]).slice();
+            if(p.indexOf(n.dataset.pick)<0&&p.length<3) p.push(n.dataset.pick);
+            put("/jours/"+d+"/plan",p).then(function(){ fermer(); contrat(n.dataset.pick); });
+          };
+        });
+      }
+      q.oninput=dessiner;
+      dessiner();
     });
 }
 
