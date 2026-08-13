@@ -429,8 +429,26 @@ function liste(){
   return Object.keys(t).map(function(k){ var x=Object.assign({},t[k]); x.id=k; return x; })
     .filter(function(x){ return x&&x.t; });
 }
-function restantes(){ return liste().filter(function(x){ return !x.fait; }); }
-function faites(){ return liste().filter(function(x){ return x.fait; }); }
+/* Trois sorties possibles pour une tâche, et elles ne se valent pas :
+   - faite    : tu l'as faite. Ça compte.
+   - annulée  : elle ne s'applique plus. Elle disparaît, sans aucun crédit.
+   - restante : elle attend.
+   Confondre les deux premières rendrait tous les chiffres faux. */
+function restantes(){ return liste().filter(function(x){ return !x.fait&&!x.annule; }); }
+function faites(){ return liste().filter(function(x){ return x.fait&&!x.annule; }); }
+function annulees(){ return liste().filter(function(x){ return x.annule; }); }
+
+/* Un chantier est une tâche qui ne se coche pas : elle se découpe.
+   On ne la propose jamais comme action — on propose ses étapes. */
+function estChantier(x){ return !!x.chantier; }
+function etapes(id){ return restantes().filter(function(x){ return x.parent===id; }); }
+function etapesToutes(id){ return liste().filter(function(x){ return x.parent===id&&!x.annule; }); }
+function avanceChantier(id){
+  var t=etapesToutes(id); if(!t.length) return null;
+  return { fait:t.filter(function(x){ return x.fait; }).length, total:t.length };
+}
+/* Les étapes vivent dans leur chantier : elles n'encombrent pas la liste principale. */
+function racines(){ return restantes().filter(function(x){ return !x.parent; }); }
 /* Les tâches cochées pendant un ménage portent « vieux » : elles comptent dans le
    total de ce qui est réglé, jamais dans le travail du jour — sinon le bilan du
    soir et la page du témoin raconteraient une journée qui n'a pas eu lieu. */
@@ -498,8 +516,16 @@ function scorer(x){
     /* déjà touchée aujourd'hui : on passe à autre chose plutôt que de tourner en rond */
     - (toucheeAuj(x.id)?200:0);
 }
+/* Ce qu'on peut réellement proposer : les tâches ordinaires, les étapes des
+   chantiers, et les chantiers pas encore découpés — pour lesquels l'action
+   proposée est justement de les découper. */
+function candidats(){
+  return restantes().filter(function(x){
+    return estChantier(x) ? etapes(x.id).length===0 : true;
+  });
+}
 function prochaines(n){
-  var r=restantes(); if(!r.length) return [];
+  var r=candidats(); if(!r.length) return [];
   r.sort(function(a,b){ return scorer(b)-scorer(a); });
   return r.slice(0,n||5);
 }
@@ -536,12 +562,25 @@ async function demarrer(x){
 async function marquerGeste(x,sec){
   await pousser("gestes",{ ts:now(), id:x.id, t:x.t, sec:Math.round(sec||GESTE_SEC) });
 }
+/* Quand la dernière étape d'un chantier tombe, le chantier se ferme tout seul :
+   il n'y a rien de plus démoralisant qu'un projet fini qui traîne encore. */
+async function fermerParent(x){
+  if(!x||!x.parent) return null;
+  var p=T()[x.parent]; if(!p||p.fait) return null;
+  var reste=etapesToutes(x.parent).filter(function(e){ return !e.fait&&e.id!==x.id; });
+  if(reste.length) return null;
+  await patch("/tasks/"+x.parent,{fait:now()});
+  var o=Object.assign({},p); o.id=x.parent; return o;
+}
+
 async function terminer(x,min){
   if(!x) return;
   var maj={fait:now()}; if(min!=null) maj.passe=Math.round(min);
   await patch("/tasks/"+x.id,maj);
   await put("/live",null);
+  var p=await fermerParent(x);
   celebrer(x,true);
+  if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
 }
 async function stopper(x,gagne){
@@ -558,7 +597,9 @@ async function basculer(x){
   if(x.fait){ await patch("/tasks/"+x.id,{fait:null}); rendre(); return; }
   await patch("/tasks/"+x.id,{fait:now()});
   await marquerGeste(x,0);
+  var p=await fermerParent(x);
   celebrer(x,true);
+  if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
 }
 
@@ -713,14 +754,18 @@ function rendreMaintenant(){
   }
   if(!x){ z.innerHTML=""; return; }
 
+  var chantier=estChantier(x);
   z.innerHTML='<button class="act" id="bGo">'+
-      '<div class="kick">'+esc(source)+'</div>'+
+      '<div class="kick">'+(chantier?"un chantier à découper":esc(source))+'</div>'+
       '<div class="quoi">'+esc(x.t)+'</div>'+
-      (x.geste?'<div class="geste"><em>premier geste</em>'+esc(x.geste)+'</div>':'')+
-      '<div class="meta">2 minutes suffisent pour que ça compte</div>'+
+      (chantier
+        ? '<div class="geste"><em>premier geste</em>écrire trois ou quatre étapes, pas plus</div>'
+        : (x.geste?'<div class="geste"><em>premier geste</em>'+esc(x.geste)+'</div>':''))+
+      '<div class="meta">'+(chantier?"Ça ne se coche pas — ça se découpe. 2 minutes."
+                                    :"2 minutes suffisent pour que ça compte")+'</div>'+
     '</button>'+
     (plan.length?'':'<button class="autre" id="bAutre">↻ une autre</button>');
-  el("bGo").onclick=function(){ demarrer(x); };
+  el("bGo").onclick=function(){ if(chantier) decouper(x.id); else demarrer(x); };
   if(el("bAutre")) el("bAutre").onclick=function(){
     var v=propose; propose=tirer();
     if(propose&&v&&propose.id===v.id) propose=tirer();
@@ -810,6 +855,56 @@ function rendreFocus(){
   }
 }
 
+/* ---------- CHANTIERS : les projets qui ne se cochent pas ---------- */
+function ouvrirChantier(id){
+  var c=T()[id]; if(!c) return;
+  var t=etapesToutes(id).sort(function(a,b){ return (a.fait?1:0)-(b.fait?1:0)||(a.ct||0)-(b.ct||0); });
+  var av=avanceChantier(id);
+  modale('<h3>'+esc(c.t)+'</h3>'+
+    (av?'<div class="lb">'+av.fait+' étape'+(av.fait>1?'s':'')+' sur '+av.total+'</div>'+
+        '<div class="jauge" style="margin:4px 0 12px"><i style="width:'+Math.round(av.fait/av.total*100)+'%"></i></div>'
+       :'<div class="lb">Pas encore découpé.</div>')+
+    '<div id="etList">'+(t.length?t.map(function(x){
+      return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'">'+
+        '<div class="case">'+(x.fait?"✓":"")+'</div>'+
+        '<div class="corps"><div class="txt">'+esc(x.t)+'</div>'+
+        '<div class="ss"><span>'+hm(x.m||15)+'</span></div></div>'+
+        (x.fait?'':'<div class="go">Go</div>')+'</div>';
+    }).join(""):'<div class="slot">aucune étape pour l\'instant</div>')+'</div>'+
+    '<button class="btn plein" id="cAdd" style="margin-top:12px">＋ Ajouter des étapes</button>'+
+    '<div class="mini">Un chantier ne se coche pas lui-même : il se ferme tout seul quand ses étapes sont finies.</div>',
+    function(box){
+      brancherTaches(box);
+      box.querySelector("#cAdd").onclick=function(){ decouper(id); };
+    });
+}
+
+/* Découper : une étape par ligne, écrites d'un coup. Le but est que ça prenne
+   deux minutes, pas que ce soit exhaustif — on peut en rajouter plus tard. */
+function decouper(id){
+  var c=T()[id]; if(!c) return;
+  modale('<h3>Découper : '+esc(c.t)+'</h3>'+
+    '<div class="lb">Une étape par ligne. Écris ce qui te vient, pas la liste parfaite.</div>'+
+    '<textarea class="champ" id="dTxt" rows="7" placeholder="Appeler le magasin&#10;Mesurer l\'espace pour le frigo&#10;Regarder les annonces Marketplace"></textarea>'+
+    '<button class="btn plein" id="dOk">Ajouter ces étapes</button>'+
+    '<div class="mini">Trois ou quatre suffisent pour commencer. Tu en ajouteras en cours de route.</div>',
+    function(box){
+      var ta=box.querySelector("#dTxt");
+      setTimeout(function(){ ta.focus(); },120);
+      box.querySelector("#dOk").onclick=async function(){
+        var lignes=ta.value.split("\n").map(function(s){ return s.trim(); }).filter(function(s){ return s; });
+        if(!lignes.length){ fermer(); return; }
+        var aj={};
+        lignes.forEach(function(s){
+          aj["e"+rid(4)]={ t:s, c:c.c||"Projet", p:c.p||3, m:15, ct:now(), fait:null, reports:0, parent:id };
+        });
+        await patch("/tasks",aj);
+        fermer(); toast(lignes.length+" étape"+(lignes.length>1?"s":"")+" ajoutée"+(lignes.length>1?"s":""));
+        rendre();
+      };
+    });
+}
+
 /* ---------- MÉNAGE ÉCLAIR : remettre la liste à jour, une carte à la fois ----------
    Une liste vieille de trois mois contient forcément des choses déjà réglées.
    Les revoir en bloc dans un document, c'est une corvée qui n'avance rien ;
@@ -841,9 +936,10 @@ function rendreMenage(){
       '<div style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt3)">'+esc(x.c||"")+'</div>'+
       '<div style="font-size:21px;font-weight:800;line-height:1.25;margin-top:10px">'+esc(x.t)+'</div>'+
     '</div>'+
-    '<button class="btn go" id="mOk" style="margin-top:10px">C\'est déjà fait ✓</button>'+
+    '<button class="btn go" id="mOk" style="margin-top:10px">Je l\'ai faite ✓</button>'+
     '<button class="btn plein" id="mGarde" style="margin-top:8px">Toujours à faire</button>'+
-    '<button class="btn gris" id="mNon" style="margin-top:8px">Plus pertinent — jeter</button>'+
+    '<button class="btn gris" id="mNon" style="margin-top:8px">Ça ne s\'applique plus</button>'+
+    '<div class="mini" style="text-align:center">« Ça ne s\'applique plus » la retire sans te créditer de rien.</div>'+
     '<button class="autre" id="mStop">j\'arrête le ménage</button>';
 
   el("mOk").onclick=function(){
@@ -854,7 +950,11 @@ function rendreMenage(){
     menageVus++; patch("/tasks/"+x.id,{revu:now()}).then(rendreMenage);
   };
   el("mNon").onclick=function(){
-    menageVus++; put("/tasks/"+x.id,null).then(rendreMenage);
+    menageVus++;
+    patch("/tasks/"+x.id,{annule:now(),revu:now()}).then(function(){
+      toast("Retirée. Aucun crédit — tu ne l'as pas faite.");
+      rendreMenage();
+    });
   };
   el("mStop").onclick=function(){ menage=false; menageVus=0; rendreListe(); };
 }
@@ -876,6 +976,8 @@ function rendreListe(){
     return '<button class="chip'+(filtre===c[0]?" on":"")+'" data-f="'+esc(c[0])+'">'+esc(c[1])+'</button>';
   }).join("")+'</div>';
 
+  /* Les étapes vivent dans leur chantier, les annulées nulle part. */
+  l=l.filter(function(x){ return !x.annule&&!x.parent; });
   if(filtre==="fait"){
     var f=l.filter(function(x){ return x.fait; }).sort(function(a,b){ return b.fait-a.fait; });
     htm+='<div class="carte" style="margin-top:0"><div class="tit">'+f.length+' réglées depuis le début</div>'+
@@ -913,6 +1015,15 @@ function rendreListe(){
   brancherTaches(el("vListe"));
 }
 function ligne(x){
+  if(estChantier(x)&&!x.fait){
+    var av=avanceChantier(x.id);
+    return '<div class="tache" data-ch="'+esc(x.id)+'">'+
+      '<div class="case" style="border-radius:5px;border-style:dashed">🧱</div>'+
+      '<div class="corps"><div class="txt">'+esc(x.t)+'</div><div class="ss">'+
+        '<span>'+(av?av.fait+' / '+av.total+' étapes':'à découper')+'</span><span>'+esc(x.c||"")+'</span></div>'+
+        (av?'<div class="jauge" style="margin:7px 0 0"><i style="width:'+Math.round(av.fait/av.total*100)+'%"></i></div>':'')+
+      '</div><div class="go">Ouvrir</div></div>';
+  }
   return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'">'+
     '<div class="case">'+(x.fait?"✓":"")+'</div>'+
     '<div class="corps"><div class="txt">'+esc(x.t)+'</div><div class="ss">'+
@@ -921,6 +1032,9 @@ function ligne(x){
     '</div></div>'+(x.fait?'':'<div class="go">Go</div>')+'</div>';
 }
 function brancherTaches(scope){
+  Array.prototype.forEach.call(scope.querySelectorAll(".tache[data-ch]"),function(n){
+    n.onclick=function(){ ouvrirChantier(n.dataset.ch); };
+  });
   Array.prototype.forEach.call(scope.querySelectorAll(".tache[data-id]"),function(n){
     var x=T()[n.dataset.id]; if(!x) return; x=Object.assign({},x); x.id=n.dataset.id;
     var c=n.querySelector(".case"); if(c) c.onclick=function(e){ e.stopPropagation(); basculer(x); };
@@ -1058,15 +1172,22 @@ function trier(k){
   modale('<h3>'+esc(o.t)+'</h3><div class="lb">Dans quelle pile ?</div>'+
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     [1,2,3,4].map(function(p){ return '<button class="btn gris" data-p="'+p+'">'+LAB[p][0]+'</button>'; }).join("")+
-    '<button class="btn gris" data-p="x" style="color:var(--rouge)">Jeter</button></div>',
+    '<button class="btn plein" data-p="ch">🧱 C\'est un chantier — ça se découpe</button>'+
+    '<button class="btn gris" data-p="x" style="color:var(--rouge)">Jeter</button></div>'+
+    '<div class="mini">Un chantier, c\'est ce qui ne se coche pas d\'un coup : « trouver mes électros », « faire mes boîtes ».</div>',
     function(box){
       Array.prototype.forEach.call(box.querySelectorAll("[data-p]"),function(b){
         b.onclick=async function(){
+          var id=null;
           if(b.dataset.p!=="x"){
-            var t={}; t["n"+rid(4)]={ t:o.t, c:"Nouveau", p:+b.dataset.p, m:15, ct:now(), fait:null, reports:0 };
+            id="n"+rid(4);
+            var t={}; t[id]={ t:o.t, c:"Nouveau", p:(b.dataset.p==="ch"?2:+b.dataset.p), m:15,
+                              ct:now(), fait:null, reports:0 };
+            if(b.dataset.p==="ch") t[id].chantier=1;
             await patch("/tasks",t);
           }
           await put("/boite/"+k,null); fermer(); rendre();
+          if(id&&b.dataset.p==="ch") decouper(id);
         };
       });
     });
