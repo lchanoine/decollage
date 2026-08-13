@@ -175,6 +175,31 @@ h1,h2,h3,p{margin:0}
 .appr{background:rgba(46,226,122,.1);border:1px solid rgba(46,226,122,.3);border-radius:12px;
   padding:11px 13px;margin-top:10px;font-size:13.5px;color:#b6f5d2}
 
+/* ---------- choix de durée / pile ---------- */
+.durs{display:flex;flex-wrap:wrap;gap:7px}
+.dur{padding:9px 13px;border-radius:11px;background:#05070f;border:1px solid var(--bord);
+  font-size:13.5px;color:var(--txt2)}
+.dur.on{background:var(--flamme);border-color:var(--flamme);color:#1c0e04;font-weight:700}
+
+/* ---------- graphique de montée ---------- */
+.hero{font-size:62px;font-weight:800;letter-spacing:-.04em;line-height:1;margin:4px 0 6px;
+  background:linear-gradient(180deg,#fff,#9fb2e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero small{font-size:24px;font-weight:700;letter-spacing:0}
+.gwrap{position:relative;margin-top:4px}
+.gwrap svg{display:block;width:100%;height:150px;touch-action:pan-y}
+.gwrap .zn{cursor:crosshair}
+.glab{display:flex;gap:13px;align-items:center;font-size:11.5px;color:var(--txt2);margin-top:7px;flex-wrap:wrap}
+.glab .k{display:inline-block;width:9px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.gtip{position:absolute;left:0;right:0;top:-4px;text-align:center;font-size:12px;color:var(--txt);
+  background:#161f3c;border:1px solid var(--bord);border-radius:9px;padding:6px 9px;
+  opacity:0;transition:.15s;pointer-events:none}
+.gtip.on{opacity:1}
+.gt{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.gt th{text-align:left;color:var(--txt3);font-weight:600;padding:5px 4px;border-bottom:1px solid var(--bord);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.gt td{padding:5px 4px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--txt2)}
+.gt td:first-child{color:var(--txt)}
+.cross{pointer-events:none}
+
 /* ---------- pourquoi ---------- */
 .reve{border-radius:var(--r);padding:15px;margin-top:11px;background:var(--surf);border:1px solid var(--bord)}
 .reve .h{display:flex;align-items:center;gap:10px}
@@ -222,8 +247,7 @@ nav .pip{position:absolute;top:3px;right:16%;width:7px;height:7px;border-radius:
 .vide{text-align:center;padding:34px 18px}
 .vide .g{font-size:48px} .vide h2{font-size:20px;margin:10px 0 6px} .vide p{color:var(--txt2);font-size:14px}
 
-/* vue maman */
-.mam .ico{display:none}
+/* écran de suivi (ouvert par le lien de partage) */
 .fil{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--bord)}
 .fil:last-child{border-bottom:0}
 .fil .h{font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums;padding-top:2px;flex:0 0 42px}
@@ -280,7 +304,7 @@ nav .pip{position:absolute;top:3px;right:16%;width:7px;height:7px;border-radius:
    RÉGLAGES
    ============================================================ */
 var DB="https://feuille-de-route-1914c-default-rtdb.firebaseio.com";
-var K_ROOM="dec-room", K_SON="dec-son";
+var K_ROOM="dec-room", K_SON="dec-son", K_QUI="dec-qui";
 var CIBLE_JOUR=3;        /* 3 gestes/jour = altitude pleine */
 var GESTE_SEC=120;       /* le geste d'entrée : 2 minutes */
 var JETONS_MOIS=3;       /* journées blanches par mois */
@@ -311,6 +335,8 @@ function vibre(p){ try{ navigator.vibrate&&navigator.vibrate(p); }catch(e){} }
    ÉTAT
    ============================================================ */
 var db={ tasks:{}, gestes:{}, jours:{}, semaines:{}, reves:{}, cheers:{}, boite:{}, jetons:{}, live:{}, meta:{} };
+/* `maman` = la page a été ouverte par le lien de partage. Mêmes droits que
+   Lucas, plus l'écran de suivi. Le nom est resté celui du premier usage. */
 var room, maman=false, vue="maintenant", filtre="tout", ouverts={}, propose=null, tick=null;
 
 function T(){ return db.tasks||(db.tasks={}); }
@@ -500,6 +526,53 @@ function meilleureSemaine(){
   for(var k=0;k<26;k++){ var n=gestesSemaine(isoPlus(l,-7*k)); if(n>best) best=n; }
   return best;
 }
+/* ============================================================
+   LA MONTAGNE — combien de travail il reste, en minutes
+
+   Un seul chiffre compte : quelle part du total est réglée.
+   Les chantiers ne comptent pas pour eux-mêmes (leurs étapes le
+   font déjà), sauf tant qu'ils ne sont pas découpés.
+   ============================================================ */
+function comptable(x){
+  if(estChantier(x)) return etapesToutes(x.id).length===0;
+  return true;
+}
+function minutesDe(l){ var s=0; l.forEach(function(x){ s+=(x.m||15); }); return s; }
+
+function montagne(){
+  var l=liste().filter(function(x){ return !x.annule&&comptable(x); });
+  var f=l.filter(function(x){ return x.fait; });
+  var total=minutesDe(l), fait=minutesDe(f);
+  return { total:total, fait:fait, reste:total-fait,
+           pct: total? Math.round(fait/total*100) : 0 };
+}
+
+/* Série jour par jour, reconstruite depuis les dates des tâches.
+   Rien n'est journalisé : tout se recalcule, donc rien ne peut mentir. */
+function serieJours(){
+  var l=liste().filter(comptable);
+  var debut=null;
+  l.forEach(function(x){ if(x.ct&&(!debut||x.ct<debut)) debut=x.ct; });
+  if(db.meta&&db.meta.debut&&(!debut||db.meta.debut<debut)) debut=db.meta.debut;
+  if(!debut) return [];
+  var d0=iso(new Date(debut)), a=iso(), n=Math.min(120,Math.max(0,joursEntre(d0,a)));
+  var out=[];
+  for(var i=0;i<=n;i++){
+    var j=isoPlus(d0,i), fin=Date.parse(j+"T23:59:59");
+    var cible=0, fait=0;
+    l.forEach(function(x){
+      var ne=(x.ct||0)<=fin;
+      var vivante=!x.annule||x.annule>fin;
+      if(ne&&vivante){
+        cible+=(x.m||15);
+        if(x.fait&&x.fait<=fin) fait+=(x.m||15);
+      }
+    });
+    out.push({ j:j, cible:cible, fait:fait });
+  }
+  return out;
+}
+
 function avancementReve(r){
   var t=(r.taches||[]).filter(function(id){ return T()[id]; });
   if(!t.length) return null;
@@ -664,15 +737,14 @@ var raf=null;
 function planifier(){ if(raf) return; raf=requestAnimationFrame(function(){ raf=null; rendre(); }); }
 
 function rendre(){
-  if(maman){ rendreMaman(); return; }
-  ["vMaintenant","vListe","vSoir","vPourquoi"].forEach(function(id){
+  ["vMaintenant","vListe","vSoir","vPourquoi","vMaman"].forEach(function(id){
     el(id).classList.add("hide");
   });
-  el("vMaman").classList.add("hide");
   if(vue==="maintenant"){ el("vMaintenant").classList.remove("hide"); rendreMaintenant(); }
   if(vue==="liste"){ el("vListe").classList.remove("hide"); rendreListe(); }
   if(vue==="soir"){ el("vSoir").classList.remove("hide"); rendreSoir(); }
   if(vue==="pourquoi"){ el("vPourquoi").classList.remove("hide"); rendrePourquoi(); }
+  if(vue==="suivi"){ el("vMaman").classList.remove("hide"); rendreMaman(); }
   rendreFocus(); rendreNav();
 }
 
@@ -718,7 +790,7 @@ function rendreMaintenant(){
   var ch=Object.keys(db.cheers||{}).map(function(k){ return db.cheers[k]; })
     .filter(function(c){ return c&&now()-c.ts<36e5*20; }).sort(function(x,y){ return y.ts-x.ts; }).slice(0,1);
   htm+=ch.map(function(c){
-    return '<div class="cheer"><div><div class="qui">'+esc(c.qui||"maman")+'</div><div class="msg">'+esc(c.msg)+'</div></div></div>';
+    return '<div class="cheer"><div><div class="qui">'+esc(c.qui||"quelqu'un")+'</div><div class="msg">'+esc(c.msg)+'</div></div></div>';
   }).join("");
 
   /* la semaine, en compétition avec la précédente */
@@ -1057,7 +1129,58 @@ function brancherTaches(scope){
     var x=T()[n.dataset.id]; if(!x) return; x=Object.assign({},x); x.id=n.dataset.id;
     var c=n.querySelector(".case"); if(c) c.onclick=function(e){ e.stopPropagation(); basculer(x); };
     var g=n.querySelector(".go"); if(g) g.onclick=function(e){ e.stopPropagation(); demarrer(x); };
+    /* toucher le texte ouvre les réglages de la tâche */
+    var corps=n.querySelector(".corps");
+    if(corps) corps.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.id); };
   });
+}
+
+/* Régler une tâche : son titre, sa durée, sa pile.
+   La durée compte pour de vrai — c'est elle qui fixe la hauteur de la montagne. */
+function editerTache(id){
+  var x=T()[id]; if(!x) return;
+  var choix=[5,10,15,20,30,45,60,90,120,180];
+  modale('<h3>Régler la tâche</h3>'+
+    '<div class="lb">Ce qu\'il y a à faire</div>'+
+    '<textarea class="champ" id="eT" rows="2">'+esc(x.t)+'</textarea>'+
+    '<div class="lb">Combien de temps ça prend, à peu près</div>'+
+    '<div class="durs" id="eDur">'+choix.map(function(v){
+      return '<button class="dur'+((x.m||15)===v?" on":"")+'" data-m="'+v+'">'+(v<60?v+" min":(v/60)+" h")+'</button>';
+    }).join("")+'</div>'+
+    '<div class="lb" style="margin-top:12px">Dans quelle pile</div>'+
+    '<div class="durs" id="ePil">'+[1,2,3,4].map(function(p){
+      return '<button class="dur'+((x.p||4)===p?" on":"")+'" data-p="'+p+'">'+LAB[p][0]+'</button>';
+    }).join("")+'</div>'+
+    '<button class="btn plein" id="eOk" style="margin-top:14px">Enregistrer</button>'+
+    (x.parent?'':'<button class="btn gris" id="eCh" style="margin-top:8px">🧱 '+(estChantier(x)?"Redevenir une tâche simple":"En faire un chantier à découper")+'</button>')+
+    '<button class="btn gris" id="eSup" style="margin-top:8px;color:var(--rouge)">Ça ne s\'applique plus</button>'+
+    '<div class="mini">Changer la durée ajuste la hauteur de la montagne et ton pourcentage. C\'est voulu : une estimation plus juste vaut mieux qu\'un beau chiffre.</div>',
+    function(box){
+      var mm=x.m||15, pp=x.p||4;
+      Array.prototype.forEach.call(box.querySelectorAll("[data-m]"),function(b){
+        b.onclick=function(){ mm=+b.dataset.m;
+          Array.prototype.forEach.call(box.querySelectorAll("[data-m]"),function(o){ o.classList.toggle("on",o===b); }); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-p]"),function(b){
+        b.onclick=function(){ pp=+b.dataset.p;
+          Array.prototype.forEach.call(box.querySelectorAll("[data-p]"),function(o){ o.classList.toggle("on",o===b); }); };
+      });
+      box.querySelector("#eOk").onclick=function(){
+        patch("/tasks/"+id,{ t:box.querySelector("#eT").value.trim()||x.t, m:mm, p:pp })
+          .then(function(){ fermer(); rendre(); });
+      };
+      if(box.querySelector("#eCh")) box.querySelector("#eCh").onclick=function(){
+        var dev=!estChantier(x);
+        patch("/tasks/"+id,{ chantier:dev?1:null }).then(function(){
+          fermer(); rendre(); if(dev) decouper(id);
+        });
+      };
+      box.querySelector("#eSup").onclick=function(){
+        patch("/tasks/"+id,{ annule:now(), revu:now() }).then(function(){
+          fermer(); toast("Retirée — sans crédit."); rendre();
+        });
+      };
+    });
 }
 
 /* ---------- CE SOIR ---------- */
@@ -1101,7 +1224,7 @@ function rendreSoir(){
     }).join("<br>")+'</div>';
     if(prets.length<plan.length)
       htm+='<div class="mini">Un « quand » et un premier geste par tâche : c\'est la partie qui fait la différence le matin.</div>';
-    if(j.approuve) htm+='<div class="appr">✓ Plan approuvé par '+esc(j.approuve.qui||"maman")+'</div>';
+    if(j.approuve) htm+='<div class="appr">✓ Plan approuvé par '+esc(j.approuve.qui||"quelqu'un")+'</div>';
   }
   htm+='</div>';
 
@@ -1250,13 +1373,123 @@ function trier(k){
     });
 }
 
+/* ---------- LE GRAPHIQUE DE MONTÉE ----------
+   Y = travail accompli. X = les jours. La courbe ne redescend jamais :
+   ajouter des tâches déplace la cible, ça n'efface pas ce qui est fait.
+   Un jour sans rien = un trait horizontal. C'est le but. */
+function heures(min){
+  if(min<60) return min+" min";
+  var h=min/60;
+  return (h<10?h.toFixed(1).replace(".0",""):Math.round(h))+" h";
+}
+function graphique(){
+  var s=serieJours();
+  if(s.length<2){
+    return '<div class="carte"><div class="tit">La montée</div>'+
+      '<div class="aide">Le graphique se remplit à partir d\'aujourd\'hui — il faut au moins deux jours pour tracer une ligne. Reviens demain.</div></div>';
+  }
+  var W=320, H=150, PL=6, PR=6, PT=14, PB=6;
+  var maxY=0; s.forEach(function(p){ if(p.cible>maxY) maxY=p.cible; });
+  maxY=Math.max(maxY,60);
+  var n=s.length;
+  function X(i){ return PL + (n===1?0:i/(n-1))*(W-PL-PR); }
+  function Y(v){ return H-PB - (v/maxY)*(H-PT-PB); }
+
+  var ptsFait=s.map(function(p,i){ return X(i)+","+Y(p.fait); }).join(" ");
+  var ptsCible=s.map(function(p,i){ return X(i)+","+Y(p.cible); }).join(" ");
+  var aire="M"+X(0)+","+(H-PB)+" L"+s.map(function(p,i){ return X(i)+","+Y(p.fait); }).join(" L")+" L"+X(n-1)+","+(H-PB)+" Z";
+
+  /* grille : hairlines pleines, une nuance au-dessus du fond */
+  var grille="";
+  for(var k=1;k<=3;k++){
+    var y=PT+(H-PT-PB)*k/4;
+    grille+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
+  }
+
+  var d=s[n-1], pct=d.cible?Math.round(d.fait/d.cible*100):0;
+
+  /* zones de survol : une bande par jour, largeur minimale confortable */
+  var zones=s.map(function(p,i){
+    var w=(W-PL-PR)/Math.max(1,n-1);
+    return '<rect class="zn" data-i="'+i+'" x="'+(X(i)-w/2).toFixed(1)+'" y="0" width="'+w.toFixed(1)+'" height="'+H+'" fill="transparent"/>';
+  }).join("");
+
+  return '<div class="carte"><div class="tit">La montée</div>'+
+    '<div class="gwrap">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" id="gsvg" role="img" aria-label="Travail accompli par rapport au total à faire, jour par jour">'+
+      '<defs><linearGradient id="gaire" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="#ff8a2b" stop-opacity=".30"/>'+
+        '<stop offset="1" stop-color="#ff8a2b" stop-opacity="0"/></linearGradient></defs>'+
+      grille+
+      '<path d="'+aire+'" fill="url(#gaire)"/>'+
+      '<polyline points="'+ptsCible+'" fill="none" stroke="#8f9ab8" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"/>'+
+      '<polyline points="'+ptsFait+'" fill="none" stroke="#ff8a2b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '<circle cx="'+X(n-1)+'" cy="'+Y(d.fait)+'" r="4.5" fill="#ff8a2b" stroke="#0d1428" stroke-width="2"/>'+
+      '<line class="cross hide" id="gcross" y1="0" y2="'+H+'" stroke="rgba(255,255,255,.28)" stroke-width="1"/>'+
+      zones+
+    '</svg>'+
+    '<div class="glab"><span><i class="k" style="background:#ff8a2b"></i>fait '+heures(d.fait)+'</span>'+
+      '<span><i class="k" style="background:#8f9ab8"></i>total '+heures(d.cible)+'</span>'+
+      '<span style="margin-left:auto;color:var(--txt3)">'+labelCourt(s[0].j)+' → aujourd\'hui</span></div>'+
+    '<div class="gtip" id="gtip"></div>'+
+    '</div>'+
+    '<div class="aide" style="margin-top:10px">La ligne pleine, c\'est ce que tu as réglé. La pointillée, c\'est la montagne — elle monte quand tu ajoutes, elle descend quand tu retires ce qui ne s\'applique plus.</div>'+
+    '<button class="autre" id="gTab" style="margin-top:2px">voir les chiffres</button>'+
+    '<div id="gTable"></div>'+
+    '</div>';
+}
+function labelCourt(j){
+  var p=j.split("-");
+  return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString("fr-CA",{day:"numeric",month:"short"});
+}
+function brancherGraphique(){
+  var svg=el("gsvg"); if(!svg) return;
+  var s=serieJours(), tip=el("gtip"), cross=el("gcross");
+  function montrer(i){
+    var p=s[i]; if(!p) return;
+    var prev=i>0?s[i-1]:null;
+    var delta=prev?p.fait-prev.fait:p.fait;
+    tip.innerHTML='<b>'+labelCourt(p.j)+'</b> — '+heures(p.fait)+' sur '+heures(p.cible)+
+      (delta>0?' · <span style="color:var(--flamme)">+'+heures(delta)+' ce jour-là</span>':' · rien ce jour-là');
+    tip.classList.add("on");
+    var W=320, PL=6, PR=6, n=s.length;
+    var x=PL+(n===1?0:i/(n-1))*(W-PL-PR);
+    cross.setAttribute("x1",x); cross.setAttribute("x2",x); cross.classList.remove("hide");
+  }
+  Array.prototype.forEach.call(svg.querySelectorAll(".zn"),function(z){
+    z.addEventListener("pointerenter",function(){ montrer(+z.dataset.i); });
+    z.addEventListener("pointerdown",function(){ montrer(+z.dataset.i); });
+  });
+  svg.addEventListener("pointerleave",function(){ tip.classList.remove("on"); cross.classList.add("hide"); });
+
+  var b=el("gTab");
+  if(b) b.onclick=function(){
+    var z=el("gTable");
+    if(z.innerHTML){ z.innerHTML=""; b.textContent="voir les chiffres"; return; }
+    b.textContent="cacher les chiffres";
+    var der=s.slice(-14).reverse();
+    z.innerHTML='<table class="gt"><tr><th>jour</th><th>fait</th><th>total</th></tr>'+
+      der.map(function(p){ return '<tr><td>'+labelCourt(p.j)+'</td><td>'+heures(p.fait)+'</td><td>'+heures(p.cible)+'</td></tr>'; }).join("")+
+      '</table>';
+  };
+}
+
 /* ---------- POURQUOI ---------- */
 function rendrePourquoi(){
   var r=db.reves||{}, ids=Object.keys(r);
   var tot=faites().length, best=meilleureSemaine(), reb=rebonds();
   var g=gestes().length;
+  var m=montagne();
 
-  var htm='<div class="carte" style="margin-top:0"><h3>De quoi tu es capable</h3>'+
+  var htm='<div class="carte" style="margin-top:0;text-align:center">'+
+    '<div class="tit" style="margin-bottom:2px">à jour sur tout</div>'+
+    '<div class="hero">'+m.pct+'<small>%</small></div>'+
+    '<div class="aide">'+heures(m.fait)+' de réglé · il reste '+heures(m.reste)+'</div>'+
+    '</div>';
+
+  htm+=graphique();
+
+  htm+='<div class="carte"><h3>De quoi tu es capable</h3>'+
     '<div class="aide">Des faits, pas des encouragements.</div>'+
     '<div class="stats" style="margin-top:11px">'+
       '<div class="v"><b>'+tot+'</b><span>tâches réglées</span></div>'+
@@ -1269,20 +1502,20 @@ function rendrePourquoi(){
 
   htm+='<div class="carte"><h3>Où tu t\'en vas</h3><div class="aide">Plus c\'est net dans ta tête, plus ça tire fort. Écris-les comme si tu les racontais à quelqu\'un.</div></div>';
 
+  /* Aucun pourcentage ici : un rêve n'est pas une barre de progression.
+     Le seul pourcentage de l'app est celui d'être à jour, en haut. */
   ids.forEach(function(k){
-    var v=r[k]||{}, pct=avancementReve(v);
+    var v=r[k]||{};
     htm+='<div class="reve" data-r="'+esc(k)+'">'+
-      '<div class="h"><span class="e">'+esc(v.e||"⭐")+'</span><span class="n">'+esc(v.nom||"")+'</span>'+
-      (pct!==null?'<span class="pct">'+pct+' %</span>':'')+'</div>'+
-      (pct!==null?'<div class="jauge"><i style="width:'+pct+'%"></i></div>':'')+
+      '<div class="h"><span class="e">'+esc(v.e||"⭐")+'</span><span class="n">'+esc(v.nom||"")+'</span></div>'+
       (v.quoi?'<div class="q">'+esc(v.quoi)+'</div>':'')+
       (v.pourquoi?'<div class="pq">'+esc(v.pourquoi)+'</div>':'')+
       '<div class="ed">✎ toucher pour préciser</div></div>';
   });
   htm+='<button class="btn gris" style="margin-top:12px" id="bNew">＋ Ajouter un projet</button>';
-  htm+='<div class="mini" style="text-align:center;margin-top:14px">Cet écran ne parle jamais de ce qu\'il reste à faire.<br>C\'est fait exprès.</div>';
 
   el("vPourquoi").innerHTML=htm;
+  brancherGraphique();
   Array.prototype.forEach.call(el("vPourquoi").querySelectorAll("[data-r]"),function(n){
     n.onclick=function(){ editerReve(n.dataset.r); };
   });
@@ -1319,15 +1552,11 @@ function editerReve(k){
 
 /* ---------- MAMAN ---------- */
 function rendreMaman(){
-  document.body.classList.add("mam");
-  ["vMaintenant","vListe","vSoir","vPourquoi"].forEach(function(i){ el(i).classList.add("hide"); });
-  el("vMaman").classList.remove("hide");
-  el("nav").style.display="none";
-
   var a=iso(), gj=gestesLe(a), demain=isoPlus(a,1);
   var j=(db.jours||{})[demain]||{}, plan=(j.plan||[]).filter(function(id){ return T()[id]; });
   var htm='<div class="jour"><div class="d">'+esc(labelJour(a))+'</div>'+
     '<div class="s">Lucas aujourd\'hui</div></div>';
+  if(!ls(K_QUI)) htm+='<button class="btn gris" id="bQui" style="margin-bottom:10px">Dis-moi ton prénom, pour signer tes messages</button>';
 
   if(db.live&&db.live.id){
     var mn=Math.floor((now()-db.live.debut)/6e4);
@@ -1357,7 +1586,7 @@ function rendreMaman(){
         (x.quand?'<div class="qd">⏰ '+esc(x.quand)+'</div>':'')+'</span></div>';
     }).join("");
     htm+= j.approuve
-      ? '<div class="appr">✓ Vous avez approuvé ce plan</div>'
+      ? '<div class="appr">✓ Plan approuvé par '+esc(j.approuve.qui||"quelqu\'un")+'</div>'
       : '<button class="btn go" style="margin-top:11px" id="bAppr">J\'approuve son plan</button>';
   }
   htm+='</div>';
@@ -1367,15 +1596,33 @@ function rendreMaman(){
       .map(function(m){ return '<button class="bravo" data-c="'+esc(m)+'">'+esc(m)+'</button>'; }).join("")+
     '</div></div>';
 
-  htm+='<div class="mini" style="text-align:center;margin-top:16px">Cette page ne montre que ce qui avance.<br>Les retards ne s\'affichent pas — c\'est voulu.</div>';
+  htm+='<div class="mini" style="text-align:center;margin-top:16px">Cette page ne montre que ce qui avance.<br>'+
+    'Les autres onglets, en bas, donnent accès à tout le reste.</div>';
 
   el("vMaman").innerHTML=htm;
   if(el("bAppr")) el("bAppr").onclick=function(){
-    patch("/jours/"+demain+"/approuve",{ts:now(),qui:"maman"}).then(function(){ toast("Approuvé ✓"); });
+    patch("/jours/"+demain+"/approuve",{ts:now(),qui:quiSuisJe()}).then(function(){ toast("Approuvé ✓"); });
   };
   Array.prototype.forEach.call(el("vMaman").querySelectorAll("[data-c]"),function(b){
-    b.onclick=function(){ pousser("cheers",{ts:now(),qui:"maman",msg:b.dataset.c}); toast("Envoyé à Lucas ✓"); };
+    b.onclick=function(){ pousser("cheers",{ts:now(),qui:quiSuisJe(),msg:b.dataset.c}); toast("Envoyé à Lucas ✓"); };
   });
+  if(el("bQui")) el("bQui").onclick=demanderQui;
+}
+
+/* Qui regarde ? Demandé une seule fois, gardé sur l'appareil du visiteur. */
+function quiSuisJe(){ return ls(K_QUI)||"quelqu'un"; }
+function demanderQui(){
+  modale('<h3>Ton prénom</h3>'+
+    '<div class="lb">Pour signer tes approbations et tes mots.</div>'+
+    '<input class="champ" id="qN" placeholder="Ex. maman" value="'+esc(ls(K_QUI)||"")+'">'+
+    '<button class="btn plein" id="qOk">Enregistrer</button>',
+    function(box){
+      var i=box.querySelector("#qN");
+      setTimeout(function(){ i.focus(); },120);
+      box.querySelector("#qOk").onclick=function(){
+        ls(K_QUI,i.value.trim()||"quelqu'un"); fermer(); rendre();
+      };
+    });
 }
 
 /* ---------- NAV ---------- */
@@ -1385,7 +1632,9 @@ function rendreNav(){
     tab("maintenant","🚀","Maintenant",false)+
     tab("liste","📋","La liste",false)+
     tab("soir","🌙","Ce soir",soir||b>0)+
-    tab("pourquoi","⭐","Le pourquoi",false);
+    tab("pourquoi","⭐","Le pourquoi",false)+
+    /* le lien de partage ouvre l'app entière, plus un écran de suivi */
+    (maman?tab("suivi","👥","Suivi",false):"");
   Array.prototype.forEach.call(el("nav").querySelectorAll("button"),function(x){
     x.onclick=function(){ vue=x.dataset.v; rendre(); window.scrollTo(0,0); };
   });
@@ -1424,12 +1673,13 @@ function reglages(){
   var lien=location.origin+location.pathname+"#r="+room+"&m=1";
   var jt=db.jetons||{};
   modale('<h3>Réglages</h3>'+
-    '<button class="btn plein" id="gLien">📋 Copier le lien pour maman</button>'+
+    '<button class="btn plein" id="gLien">📋 Copier le lien de partage</button>'+
     '<button class="btn gris" id="gSon" style="margin-top:8px">'+(ls(K_SON)==="0"?"🔇 Sons éteints":"🔊 Sons allumés")+'</button>'+
     '<button class="btn gris" id="gSave" style="margin-top:8px">💾 Sauvegarder mes données</button>'+
     '<div class="mini">Journées blanches ce mois-ci : <b>'+(jt.reste===undefined?JETONS_MOIS:jt.reste)+' sur '+JETONS_MOIS+'</b>. '+
       'Une journée vide en consomme une automatiquement, sans faire tomber ton altitude.</div>'+
-    '<div class="mini">Lien maman (lecture) :<br><span style="word-break:break-all;color:var(--txt2)">'+esc(lien)+'</span></div>'+
+    '<div class="mini">Le lien de partage donne accès à toute l\'application, plus un écran de suivi '+
+      'pour approuver ton plan et t\'envoyer un mot.<br><span style="word-break:break-all;color:var(--txt2)">'+esc(lien)+'</span></div>'+
     '<div class="mini">Ton lien à toi, à garder : <br><span style="word-break:break-all;color:var(--txt2)">'+
       esc(location.origin+location.pathname+"#r="+room)+'</span></div>',
     function(box){
@@ -1487,6 +1737,8 @@ async function demarrage(){
 
   el("btnAdd").onclick=attraper;
   el("btnMenu").onclick=reglages;
+  /* le lien de partage donne les mêmes droits ; il ouvre juste sur le suivi */
+  if(maman) vue="suivi";
 
   connecter();
   try{
@@ -1501,7 +1753,7 @@ async function demarrage(){
     await reglerJetons();
   }
   rendre();
-  setInterval(function(){ if(vue==="maintenant"||maman) planifier(); },30000);
+  setInterval(function(){ if(vue==="maintenant"||vue==="suivi") planifier(); },30000);
 }
 
 document.addEventListener("visibilitychange",function(){
