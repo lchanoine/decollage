@@ -119,7 +119,9 @@ h1,h2,h3,p{margin:0}
 .anneau .fg{stroke:url(#gf);transition:stroke-dashoffset .9s linear}
 .chrono{font-size:60px;font-weight:800;letter-spacing:-.045em;font-variant-numeric:tabular-nums;transition:color .4s}
 .chrono.over{color:var(--jaune)}
-.chrono small{display:block;font-size:13px;font-weight:600;color:var(--txt3);letter-spacing:0;margin-top:2px}
+.chrono small{position:absolute;left:50%;bottom:-24px;transform:translateX(-50%);white-space:nowrap;
+  font-size:12px;font-weight:600;color:var(--txt3);letter-spacing:.02em}
+.anneau{overflow:visible}
 .note{margin-top:16px;padding:12px 15px;border-radius:13px;font-size:14px;text-align:center;max-width:330px;line-height:1.45}
 .note.gagne{background:rgba(46,226,122,.12);border:1px solid rgba(46,226,122,.35);color:#b6f5d2}
 .note.assez{background:rgba(255,210,63,.1);border:1px solid rgba(255,210,63,.3);color:#ffe9a8}
