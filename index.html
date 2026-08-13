@@ -834,8 +834,9 @@ function rendreMenage(){
   }
   var x=f[0];
   el("vListe").innerHTML=
-    '<div class="carte" style="margin-top:0"><div class="tit">Ménage — '+menageVus+' revues</div>'+
-    '<div class="aide">Cette tâche date du 22 mai. Elle tient encore ?</div></div>'+
+    '<div class="carte" style="margin-top:0"><div class="tit">Ménage'+
+      (menageVus?' — '+menageVus+' revue'+(menageVus>1?'s':''):'')+'</div>'+
+    '<div class="aide">Elle tient encore, celle-là ?</div></div>'+
     '<div class="carte" style="text-align:center;padding:26px 18px">'+
       '<div style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt3)">'+esc(x.c||"")+'</div>'+
       '<div style="font-size:21px;font-weight:800;line-height:1.25;margin-top:10px">'+esc(x.t)+'</div>'+
