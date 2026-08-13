@@ -476,8 +476,13 @@ function avancementReve(r){
   return Math.min(100, Math.round(15+ (f/t.length)*85));
 }
 
+function toucheeAuj(id){
+  return gestesLe(iso()).some(function(g){ return g.id===id; });
+}
 function scorer(x){
-  return (5-(x.p||4))*26 + Math.max(0,40-(x.m||15))*0.55 + Math.min(x.reports||0,8)*9;
+  return (5-(x.p||4))*26 + Math.max(0,40-(x.m||15))*0.55 + Math.min(x.reports||0,8)*9
+    /* déjà touchée aujourd'hui : on passe à autre chose plutôt que de tourner en rond */
+    - (toucheeAuj(x.id)?200:0);
 }
 function prochaines(n){
   var r=restantes(); if(!r.length) return [];
