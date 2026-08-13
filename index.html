@@ -1153,7 +1153,12 @@ function choisir(d){
       function dessiner(){
         var f=normal(q.value).trim();
         var sel=tous.filter(function(x){
-          return !f || normal(x.t).indexOf(f)>=0 || normal(x.c).indexOf(f)>=0;
+          if(!f) return true;
+          /* chercher « électros » doit remonter les étapes du chantier,
+             même si aucune ne contient le mot */
+          var p=x.parent?T()[x.parent]:null;
+          return normal(x.t).indexOf(f)>=0 || normal(x.c).indexOf(f)>=0
+              || (p&&normal(p.t).indexOf(f)>=0);
         });
         zone.innerHTML = sel.length
           ? sel.map(function(x){
