@@ -1,0 +1,9 @@
+# Données personnelles — ne JAMAIS publier.
+# Ce dépôt est public (GitHub Pages l'exige sur un compte gratuit).
+# Tout ce qui contient des noms de clients, des numéros de téléphone,
+# des adresses ou du contenu de journal intime reste sur le portable.
+taches.js
+reves.js
+.room
+docs/
+*.json
