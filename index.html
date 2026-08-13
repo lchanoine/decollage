@@ -431,7 +431,10 @@ function liste(){
 }
 function restantes(){ return liste().filter(function(x){ return !x.fait; }); }
 function faites(){ return liste().filter(function(x){ return x.fait; }); }
-function faitesLe(d){ return faites().filter(function(x){ return iso(new Date(x.fait))===d; }); }
+/* Les tâches cochées pendant un ménage portent « vieux » : elles comptent dans le
+   total de ce qui est réglé, jamais dans le travail du jour — sinon le bilan du
+   soir et la page du témoin raconteraient une journée qui n'a pas eu lieu. */
+function faitesLe(d){ return faites().filter(function(x){ return !x.vieux&&iso(new Date(x.fait))===d; }); }
 
 function gestes(){ var g=db.gestes||{};
   return Object.keys(g).map(function(k){ return g[k]; }).filter(function(x){ return x&&x.ts; }); }
@@ -564,13 +567,14 @@ async function basculer(x){
    ============================================================ */
 var MOTS_FIN=["Réglé.","Fait.","Une de moins.","C'est derrière toi.","Terminé.","Rayé."];
 var MOTS_GESTE=["Compte comme une victoire.","Tu l'as touché.","Le plus dur est fait.","Départ pris."];
-function celebrer(x,complet){
+function celebrer(x,complet,vieux){
   var f=el("fete"); f.classList.remove("hide");
   var g=gestesLe(iso()).length+1;
-  var mot=complet?MOTS_FIN[Math.floor(Math.random()*MOTS_FIN.length)]
-                 :MOTS_GESTE[Math.floor(Math.random()*MOTS_GESTE.length)];
+  var mot=vieux?"Déjà réglé. 👍"
+        :complet?MOTS_FIN[Math.floor(Math.random()*MOTS_FIN.length)]
+                :MOTS_GESTE[Math.floor(Math.random()*MOTS_GESTE.length)];
   var sous = x&&x.t ? esc(x.t.length>52?x.t.slice(0,50)+"…":x.t) : "";
-  f.innerHTML='<div class="mot">'+esc(mot)+'<small>'+sous+' · '+g+(g>1?' aujourd\'hui':' aujourd\'hui')+'</small></div>';
+  f.innerHTML='<div class="mot">'+esc(mot)+'<small>'+sous+(vieux?'':' · '+g+' aujourd\'hui')+'</small></div>';
   confettis(f); vibre([12,50,26]); bip();
   setTimeout(function(){ f.classList.add("hide"); f.innerHTML=""; },1750);
 }
@@ -806,11 +810,64 @@ function rendreFocus(){
   }
 }
 
+/* ---------- MÉNAGE ÉCLAIR : remettre la liste à jour, une carte à la fois ----------
+   Une liste vieille de trois mois contient forcément des choses déjà réglées.
+   Les revoir en bloc dans un document, c'est une corvée qui n'avance rien ;
+   les revoir une par une, c'est une victoire par carte. */
+var menage=false, menageVus=0;
+
+function aRevoir(){
+  return restantes().filter(function(x){ return !x.revu; })
+    .sort(function(a,b){ return (a.p||4)-(b.p||4)||(a.m||15)-(b.m||15); });
+}
+function rendreMenage(){
+  var f=aRevoir();
+  if(!f.length||menageVus>=12){
+    var fini=!f.length;
+    el("vListe").innerHTML='<div class="vide"><div class="g">'+(fini?"✨":"👍")+'</div>'+
+      '<h2>'+(fini?"Liste passée au complet.":"Ça suffit pour à soir.")+'</h2>'+
+      '<p>'+menageVus+' tâche'+(menageVus>1?"s":"")+' revue'+(menageVus>1?"s":"")+'.'+
+      (fini?'':' Le reste attendra — rien ne presse.')+'</p>'+
+      '<button class="btn gris" id="mFin" style="margin-top:16px">Revenir à la liste</button></div>';
+    el("mFin").onclick=function(){ menage=false; menageVus=0; rendreListe(); };
+    return;
+  }
+  var x=f[0];
+  el("vListe").innerHTML=
+    '<div class="carte" style="margin-top:0"><div class="tit">Ménage — '+menageVus+' revues</div>'+
+    '<div class="aide">Cette tâche date du 22 mai. Elle tient encore ?</div></div>'+
+    '<div class="carte" style="text-align:center;padding:26px 18px">'+
+      '<div style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt3)">'+esc(x.c||"")+'</div>'+
+      '<div style="font-size:21px;font-weight:800;line-height:1.25;margin-top:10px">'+esc(x.t)+'</div>'+
+    '</div>'+
+    '<button class="btn go" id="mOk" style="margin-top:10px">C\'est déjà fait ✓</button>'+
+    '<button class="btn plein" id="mGarde" style="margin-top:8px">Toujours à faire</button>'+
+    '<button class="btn gris" id="mNon" style="margin-top:8px">Plus pertinent — jeter</button>'+
+    '<button class="autre" id="mStop">j\'arrête le ménage</button>';
+
+  el("mOk").onclick=function(){
+    menageVus++;
+    patch("/tasks/"+x.id,{fait:now(),vieux:1,revu:now()}).then(function(){ celebrer(x,true,true); rendreMenage(); });
+  };
+  el("mGarde").onclick=function(){
+    menageVus++; patch("/tasks/"+x.id,{revu:now()}).then(rendreMenage);
+  };
+  el("mNon").onclick=function(){
+    menageVus++; put("/tasks/"+x.id,null).then(rendreMenage);
+  };
+  el("mStop").onclick=function(){ menage=false; menageVus=0; rendreListe(); };
+}
+
 /* ---------- LISTE : repliée, jamais un mur ---------- */
 var LAB={1:["⚡ Vite fait","var(--p1)"],2:["🔴 Gros morceaux","var(--p2)"],
          3:["🟡 Quand ça adonne","var(--p3)"],4:["🟢 Plus tard","var(--p4)"]};
 function rendreListe(){
+  if(menage){ rendreMenage(); return; }
   var l=liste(), htm='';
+  var nRevoir=aRevoir().length;
+  if(nRevoir){
+    htm+='<button class="btn gris" id="bMenage" style="margin-bottom:12px">🧹 Ménage éclair — remettre la liste à jour</button>';
+  }
   var chips=[["tout","Par pile"],["fait","✓ Réglées"]];
   var cats={}; l.forEach(function(x){ if(!x.fait) cats[x.c||"Autre"]=1; });
   Object.keys(cats).sort().forEach(function(c){ chips.push(["c:"+c,c]); });
@@ -845,6 +902,7 @@ function rendreListe(){
   }
   el("vListe").innerHTML=htm;
 
+  if(el("bMenage")) el("bMenage").onclick=function(){ menage=true; menageVus=0; rendreMenage(); window.scrollTo(0,0); };
   Array.prototype.forEach.call(el("vListe").querySelectorAll(".chip"),function(b){
     b.onclick=function(){ filtre=b.dataset.f; rendreListe(); };
   });
