@@ -447,7 +447,7 @@ function altitude(){
      fenêtre s'ouvre progressivement (plancher de 5 jours pour rester lisse). */
   var debut=(db.meta&&db.meta.debut)?iso(new Date(db.meta.debut)):a;
   var age=Math.max(0,-joursEntre(a,debut));
-  var fen=Math.min(14,Math.max(5,age+1));
+  var fen=Math.min(14,age+1);
   for(var j=0;j<fen;j++){
     var d=isoPlus(a,-j), w=Math.pow(0.87,j);
     var n=gestesLe(d).length;
