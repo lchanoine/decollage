@@ -569,7 +569,11 @@ async function fermerParent(x){
   var p=T()[x.parent]; if(!p||p.fait) return null;
   var reste=etapesToutes(x.parent).filter(function(e){ return !e.fait&&e.id!==x.id; });
   if(reste.length) return null;
-  await patch("/tasks/"+x.parent,{fait:now()});
+  var t=now();
+  await patch("/tasks/"+x.parent,{fait:t});
+  /* On applique tout de suite en local : l'écho du flux peut arriver après,
+     et l'écran ne doit pas afficher un chantier ouvert qui vient de fermer. */
+  if(T()[x.parent]) T()[x.parent].fait=t;
   var o=Object.assign({},p); o.id=x.parent; return o;
 }
 
@@ -594,8 +598,10 @@ async function reporter(x){
   await put("/live",null); propose=null; rendre();
 }
 async function basculer(x){
-  if(x.fait){ await patch("/tasks/"+x.id,{fait:null}); rendre(); return; }
-  await patch("/tasks/"+x.id,{fait:now()});
+  if(x.fait){ await patch("/tasks/"+x.id,{fait:null}); if(T()[x.id]) T()[x.id].fait=null; rendre(); return; }
+  var t=now();
+  await patch("/tasks/"+x.id,{fait:t});
+  if(T()[x.id]) T()[x.id].fait=t;
   await marquerGeste(x,0);
   var p=await fermerParent(x);
   celebrer(x,true);
