@@ -874,7 +874,17 @@ function ouvrirChantier(id){
     '<button class="btn plein" id="cAdd" style="margin-top:12px">＋ Ajouter des étapes</button>'+
     '<div class="mini">Un chantier ne se coche pas lui-même : il se ferme tout seul quand ses étapes sont finies.</div>',
     function(box){
-      brancherTaches(box);
+      /* Les actions faites depuis l'intérieur d'un chantier doivent le
+         redessiner : sinon la progression affichée ment le temps d'un clic. */
+      Array.prototype.forEach.call(box.querySelectorAll(".tache[data-id]"),function(n){
+        var x=T()[n.dataset.id]; if(!x) return;
+        x=Object.assign({},x); x.id=n.dataset.id;
+        var ca=n.querySelector(".case");
+        if(ca) ca.onclick=function(e){ e.stopPropagation();
+          basculer(x).then(function(){ if(T()[id]&&!T()[id].fait) ouvrirChantier(id); else fermer(); }); };
+        var g=n.querySelector(".go");
+        if(g) g.onclick=function(e){ e.stopPropagation(); fermer(); demarrer(x); };
+      });
       box.querySelector("#cAdd").onclick=function(){ decouper(id); };
     });
 }
