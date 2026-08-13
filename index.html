@@ -294,6 +294,7 @@ function pad(x){ return String(x).padStart(2,"0"); }
 function now(){ return Date.now(); }
 function iso(d){ d=d||new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
 function isoPlus(s,n){ var p=s.split("-"); return iso(new Date(+p[0],+p[1]-1,+p[2]+n)); }
+function joursEntre(a,b){ return Math.round((Date.parse(b+"T00:00:00")-Date.parse(a+"T00:00:00"))/864e5); }
 function lundi(s){ var p=(s||iso()).split("-"); var d=new Date(+p[0],+p[1]-1,+p[2]);
   var j=(d.getDay()+6)%7; d.setDate(d.getDate()-j); return iso(d); }
 function labelJour(s){ var p=s.split("-"); var t=new Date(+p[0],+p[1]-1,+p[2])
@@ -442,7 +443,12 @@ function gestesSemaine(l){ var n=0;
    Les journées blanches (jetons) ne pénalisent pas. */
 function altitude(){
   var a=iso(), s=0, p=0;
-  for(var j=0;j<14;j++){
+  /* On ne compte pas comme « vides » les jours d'avant l'installation : la
+     fenêtre s'ouvre progressivement (plancher de 5 jours pour rester lisse). */
+  var debut=(db.meta&&db.meta.debut)?iso(new Date(db.meta.debut)):a;
+  var age=Math.max(0,-joursEntre(a,debut));
+  var fen=Math.min(14,Math.max(5,age+1));
+  for(var j=0;j<fen;j++){
     var d=isoPlus(a,-j), w=Math.pow(0.87,j);
     var n=gestesLe(d).length;
     var blanc=(db.jours||{})[d]&&(db.jours||{})[d].blanc;
@@ -455,9 +461,14 @@ function altitude(){
 /* Rebond : jours sans geste suivis d'une reprise sous 48 h.
    C'est la compétence qui lui manque — donc celle qu'on met en avant. */
 function rebonds(){
+  /* Uniquement depuis le premier jour d'utilisation : compter des « rebonds »
+     sur des journées antérieures à l'outil produirait un chiffre faux, et cet
+     écran ne vaut que s'il ne dit que des faits. */
   var a=iso(), n=0;
-  for(var j=1;j<60;j++){
+  var debut=(db.meta&&db.meta.debut)?iso(new Date(db.meta.debut)):a;
+  for(var j=1;j<180;j++){
     var d=isoPlus(a,-j);
+    if(d<=debut) break;
     if(gestesLe(d).length) continue;
     if(gestesLe(isoPlus(d,1)).length||gestesLe(isoPlus(d,2)).length) n++;
   }
