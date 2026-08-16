@@ -169,6 +169,14 @@ h1,h2,h3,p{margin:0}
 .slot .gs{font-size:12.5px;color:var(--txt2);margin-top:2px}
 .slot .manque{font-size:12px;color:var(--jaune);margin-top:3px}
 .slot .x{color:var(--txt3);padding:0 3px;font-size:19px;flex:0 0 auto}
+/* la case à cocher d'un créneau : même geste que dans la liste */
+.slot .case{margin-top:0}
+.slot.faite{border-color:rgba(46,226,122,.34);background:rgba(46,226,122,.07)}
+.slot.faite .case{background:var(--vert);border-color:var(--vert);color:#04240f}
+.slot.faite .cn{text-decoration:line-through;opacity:.55}
+/* depuis quand elle attend — un fait, pas un reproche */
+.depuis{font-size:11.5px;color:var(--txt2);margin-top:3px}
+.depuis b{color:var(--jaune);font-weight:700}
 .script{background:#05070f;border:1px solid var(--bord);border-radius:12px;padding:14px;margin-top:11px;
   font-size:14.5px;line-height:1.6}
 .script .c{color:var(--flamme);font-weight:700}
@@ -199,6 +207,38 @@ h1,h2,h3,p{margin:0}
 .gt td{padding:5px 4px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--txt2)}
 .gt td:first-child{color:var(--txt)}
 .cross{pointer-events:none}
+/* le rythme jour par jour, sous la courbe : une échelle à lui, donc lisible
+   même quand la montée globale est encore un trait plat */
+.gbars svg{display:block;width:100%;height:54px;margin-top:2px}
+
+/* ---------- série de journées pleines ----------
+   Le chiffre qu'il vient chercher : gros, chaud, impossible à manquer. */
+.streak{position:relative;overflow:hidden;margin-top:12px;padding:17px 16px 14px;border-radius:20px;text-align:center;
+  background:linear-gradient(150deg,rgba(255,138,43,.22),rgba(255,90,24,.05));border:1px solid rgba(255,138,43,.42);
+  box-shadow:0 14px 34px -20px rgba(255,90,24,.8)}
+.streak .feu{font-size:25px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,138,43,.7))}
+.streak .n{font-size:58px;font-weight:800;line-height:.98;letter-spacing:-.045em;margin-top:2px;
+  background:linear-gradient(180deg,#ffe08a,#ff5a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.streak .lab{font-size:14.5px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+.streak .sous{font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.45}
+.streak.vide{background:var(--surf);border-color:var(--bord);box-shadow:none}
+.streak.vide .n{font-size:38px;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--txt3)}
+/* la réserve de jetons, sous la série : des pastilles, pas un compte à rebours */
+.jetons{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+  margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.11);font-size:12.5px;color:var(--txt2)}
+.jetons .pastilles{display:flex;gap:4px}
+.jeton{width:10px;height:10px;border-radius:50%;background:var(--bleu);box-shadow:0 0 9px rgba(94,200,255,.6)}
+.jeton.off{background:rgba(255,255,255,.14);box-shadow:none}
+.jetons b{color:var(--bleu);font-weight:800}
+
+/* ---------- ce que le témoin ne voit pas ---------- */
+.lock{color:var(--bleu);font-size:11px;font-weight:700}
+.reve .lock{flex:0 0 auto}
+/* masquer en un seul geste, depuis la ligne elle-même */
+.lk{flex:0 0 auto;align-self:center;width:31px;height:31px;border-radius:10px;display:grid;place-items:center;
+  font-size:13px;background:var(--surf2);opacity:.5;transition:.15s}
+.lk.on{opacity:1;background:rgba(94,200,255,.20);box-shadow:inset 0 0 0 1px rgba(94,200,255,.35)}
+.lk:active{transform:scale(.9)}
 
 /* ---------- pourquoi ---------- */
 .reve{border-radius:var(--r);padding:15px;margin-top:11px;background:var(--surf);border:1px solid var(--bord)}
@@ -237,12 +277,37 @@ nav .pip{position:absolute;top:3px;right:16%;width:7px;height:7px;border-radius:
 .lb{font-size:12px;color:var(--txt3);margin:2px 0 6px}
 .mini{font-size:12px;color:var(--txt3);margin-top:10px;line-height:1.5}
 
-#fete{position:fixed;inset:0;z-index:95;pointer-events:none;display:grid;place-items:center}
+#fete{position:fixed;inset:0;z-index:95;pointer-events:none;display:grid;place-items:center;overflow:hidden}
 #fete .mot{font-size:29px;font-weight:800;text-align:center;padding:0 28px;color:#fff;
-  text-shadow:0 6px 44px rgba(255,138,43,.85);animation:fete 1.7s ease forwards;letter-spacing:-.02em}
+  text-shadow:0 6px 44px rgba(255,138,43,.85);animation:fete 1.7s ease forwards;letter-spacing:-.02em;position:relative;z-index:2}
 #fete .mot small{display:block;font-size:15px;font-weight:600;opacity:.75;margin-top:8px;text-shadow:none}
+#fete .mot .gain{display:block;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--jaune);margin-top:10px;text-shadow:0 0 20px rgba(255,210,63,.7)}
 @keyframes fete{0%{transform:scale(.72);opacity:0}16%{transform:scale(1.06);opacity:1}74%{transform:scale(1);opacity:1}100%{transform:scale(1.02);opacity:0}}
-.part{position:absolute;width:8px;height:8px;border-radius:2px}
+/* la fête d'une journée pleine : plus grosse, elle doit se distinguer */
+#fete.pleine .mot{font-size:36px;animation:fetePleine 2.4s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes fetePleine{0%{transform:scale(.6) rotate(-3deg);opacity:0}12%{transform:scale(1.14) rotate(1.5deg);opacity:1}
+  24%{transform:scale(.98) rotate(-.5deg)}34%{transform:scale(1.04) rotate(0)}80%{transform:scale(1);opacity:1}100%{transform:scale(1.06);opacity:0}}
+
+/* ---------- les pièces de la gratification ---------- */
+.part{position:absolute;width:9px;height:9px;border-radius:2px}
+.part.rond{border-radius:50%}
+.part.ruban{width:6px;height:15px;border-radius:3px}
+/* l'onde de choc partie du centre */
+.onde{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
+  border:2.5px solid rgba(255,210,63,.85)}
+/* le flash chaud, une fraction de seconde */
+.flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,170,60,.4),transparent 62%)}
+/* les étincelles qui montent du bas, comme une poussée */
+.spark{position:absolute;bottom:-14px;width:3px;height:14px;border-radius:2px;
+  background:linear-gradient(180deg,#fff3c4,#ff8a2b)}
+/* la carte cochée qui s'illumine avant de partir */
+@keyframes coche{0%{transform:scale(1)}35%{transform:scale(1.035);box-shadow:0 0 0 2px rgba(46,226,122,.55),0 10px 30px -14px rgba(46,226,122,.9)}
+  100%{transform:scale(1)}}
+.tache.pop,.slot.pop{animation:coche .55s cubic-bezier(.2,.8,.3,1)}
+/* le chiffre de la série qui encaisse le coup quand il monte */
+@keyframes pulseN{0%{transform:scale(1)}30%{transform:scale(1.22)}60%{transform:scale(.97)}100%{transform:scale(1)}}
+.streak .n.pulse{animation:pulseN .85s cubic-bezier(.2,.8,.3,1)}
 
 .vide{text-align:center;padding:34px 18px}
 .vide .g{font-size:48px} .vide h2{font-size:20px;margin:10px 0 6px} .vide p{color:var(--txt2);font-size:14px}
@@ -307,7 +372,7 @@ var DB="https://feuille-de-route-1914c-default-rtdb.firebaseio.com";
 var K_ROOM="dec-room", K_SON="dec-son", K_QUI="dec-qui";
 var CIBLE_JOUR=3;        /* 3 gestes/jour = altitude pleine */
 var GESTE_SEC=120;       /* le geste d'entrée : 2 minutes */
-var JETONS_MOIS=3;       /* journées blanches par mois */
+var JETON_SEMAINE=1;     /* un jeton gagné par semaine, qui s'accumule */
 
 /* ============================================================
    OUTILS
@@ -450,10 +515,37 @@ async function semer(){
 /* ============================================================
    CALCULS
    ============================================================ */
+/* ---------- CE QUE LE TÉMOIN NE VOIT PAS ----------
+   Le drapeau `prive` retire une tâche (et ses étapes) ou un projet de la page
+   quand elle est ouverte par le lien de partage.
+
+   À dire franchement, parce que ça compte : c'est un rideau, pas un coffre.
+   Qui possède l'identifiant du salon peut interroger la base directement et
+   lire ce qu'il veut. Ça protège d'un regard par-dessus l'épaule, pas de
+   quelqu'un qui cherche. Pour un vrai mur il faudrait un second salon.
+
+   Un seul point de filtrage — `liste()` et `gestes()` — pour qu'aucun écran
+   ne puisse laisser passer ce qui est caché en oubliant de filtrer. */
+function priveeX(x){
+  if(!x) return false;
+  if(x.prive) return true;
+  if(x.parent){ var p=T()[x.parent]; if(p&&p.prive) return true; }
+  return false;
+}
+function masquee(x){ return maman&&priveeX(x); }
+/* Une tâche que la page a le droit d'afficher, par son identifiant. */
+function visibleId(id){ var x=T()[id]; return !!x&&!masquee(x); }
+/* La tâche en cours s'affiche en plein écran : si elle est cachée, l'écran de
+   focus et le suivi doivent se taire tous les deux. */
+function liveMasque(){
+  var L=db.live;
+  return !!(L&&L.id&&maman&&T()[L.id]&&priveeX(T()[L.id]));
+}
+
 function liste(){
   var t=T();
   return Object.keys(t).map(function(k){ var x=Object.assign({},t[k]); x.id=k; return x; })
-    .filter(function(x){ return x&&x.t; });
+    .filter(function(x){ return x&&x.t&&!masquee(x); });
 }
 /* Trois sorties possibles pour une tâche, et elles ne se valent pas :
    - faite    : tu l'as faite. Ça compte.
@@ -480,8 +572,11 @@ function racines(){ return restantes().filter(function(x){ return !x.parent; });
    soir et la page du témoin raconteraient une journée qui n'a pas eu lieu. */
 function faitesLe(d){ return faites().filter(function(x){ return !x.vieux&&iso(new Date(x.fait))===d; }); }
 
+/* Un geste porte le titre de sa tâche : si la tâche est cachée au témoin,
+   le geste l'est aussi, sinon le titre réapparaîtrait dans son fil. */
 function gestes(){ var g=db.gestes||{};
-  return Object.keys(g).map(function(k){ return g[k]; }).filter(function(x){ return x&&x.ts; }); }
+  return Object.keys(g).map(function(k){ return g[k]; })
+    .filter(function(x){ return x&&x.ts&&!(maman&&x.id&&T()[x.id]&&priveeX(T()[x.id])); }); }
 function gestesLe(d){ return gestes().filter(function(x){ return iso(new Date(x.ts))===d; }); }
 function gestesSemaine(l){ var n=0;
   for(var i=0;i<7;i++) n+=gestesLe(isoPlus(l,i)).length; return n; }
@@ -608,20 +703,137 @@ function tirer(){
 }
 function planDuJour(){
   var j=(db.jours||{})[iso()]||{};
-  return (j.plan||[]).filter(function(id){ return T()[id]&&!T()[id].fait; })
+  return (j.plan||[]).filter(function(id){ return visibleId(id)&&!T()[id].fait&&!T()[id].annule; })
     .map(function(id){ var x=Object.assign({},T()[id]); x.id=id; return x; });
 }
 
-/* Journées blanches : appliquées automatiquement, sans rien demander. */
-async function reglerJetons(){
-  var m=iso().slice(0,7), jt=db.jetons||{};
-  if(jt.mois!==m){ jt={mois:m,reste:JETONS_MOIS}; await put("/jetons",jt); db.jetons=jt; }
-  var hier=isoPlus(iso(),-1), jh=(db.jours||{})[hier]||{};
-  if(!gestesLe(hier).length && !jh.blanc && (db.jetons.reste||0)>0
-     && db.meta && db.meta.debut && iso(new Date(db.meta.debut))<hier){
-    await patch("/jours/"+hier,{blanc:1});
-    await patch("/jetons",{reste:(db.jetons.reste||0)-1});
+/* ---------- LES TÂCHES PRÉVUES QUI N'ONT PAS ÉTÉ FAITES ----------
+   Une tâche que tu avais prévue pour un jour donné ne s'évapore pas le
+   lendemain : elle glisse dans le plan du jour et garde la date à laquelle tu
+   l'avais prévue, ce qui permet de dire depuis quand elle attend.
+
+   Le plafond de trois tient quand même. Au-delà, les plus anciennes prennent
+   les places et les autres reviennent dès qu'une place se libère : jamais un
+   plan de sept lignes le matin, jamais une tâche perdue non plus. */
+function attendDepuis(x){
+  if(!x||!x.prevu||x.fait||x.annule) return 0;
+  return Math.max(0,joursEntre(x.prevu,iso()));
+}
+async function reporterPlans(){
+  var a=iso(), plan=(((db.jours||{})[a]||{}).plan||[]).slice(), bouge=false;
+  /* une tâche déjà inscrite pour un jour à venir n'est pas en retard : tu l'as
+     replacée toi-même. La reporter en plus produirait un doublon à l'écran. */
+  var futurs={};
+  Object.keys(db.jours||{}).forEach(function(d){
+    if(d>a) (((db.jours[d]||{}).plan)||[]).forEach(function(id){ futurs[id]=1; });
+  });
+  liste()
+    .filter(function(x){ return !x.fait&&!x.annule&&x.prevu&&x.prevu<a&&plan.indexOf(x.id)<0&&!futurs[x.id]; })
+    .sort(function(p,q){ return p.prevu<q.prevu?-1:p.prevu>q.prevu?1:0; })
+    .forEach(function(x){ if(plan.length<3){ plan.push(x.id); bouge=true; } });
+  if(bouge){ await put("/jours/"+a+"/plan",plan); (db.jours||{})[a]=Object.assign({},(db.jours||{})[a],{plan:plan}); }
+}
+
+/* ---------- LA SÉRIE DE JOURNÉES PLEINES ----------
+   Un jour compte quand le plan de ce jour-là portait trois tâches et que les
+   trois sont tombées avant la fin de la journée.
+
+   Un jour manqué ne remet pas tout à zéro : il consomme une des journées
+   blanches du mois, exactement comme ailleurs dans l'app. Deux jours manqués
+   d'affilée arrêtent la série — sans ça, elle ne voudrait plus rien dire. */
+function jourPlein(d){
+  var p=(((db.jours||{})[d]||{}).plan)||[];
+  if(p.length<3) return false;
+  var fin=Date.parse(d+"T23:59:59");
+  return p.every(function(id){
+    var x=T()[id]; return !!x&&!x.annule&&!!x.fait&&x.fait<=fin;
+  });
+}
+function premierJour(){
+  var a=iso();
+  return (db.meta&&db.meta.debut)?iso(new Date(db.meta.debut)):a;
+}
+/* La série ne devine rien : elle lit les journées blanches déjà posées par les
+   jetons. Un jour qui n'est ni plein ni blanc l'arrête, point. */
+function serie(){
+  var a=iso(), debut=premierJour(), n=0, blanches=0, attente=0;
+  /* la journée en cours ne peut rien casser : elle n'est pas finie */
+  if(jourPlein(a)) n=1;
+  var d=isoPlus(a,-1);
+  for(var i=0;i<400;i++){
+    if(d<debut) break;
+    if(jourPlein(d)){
+      /* une blanche ne se compte qu'une fois qu'elle a servi à relier deux
+         jours pleins ; celle qui précède le début de la série n'a rien
+         absorbé et ne doit pas apparaître */
+      n++; blanches+=attente; attente=0;
+    }
+    else if(((db.jours||{})[d]||{}).blanc) attente++;
+    else break;
+    d=isoPlus(d,-1);
   }
+  return { n:n, blanches:blanches };
+}
+function meilleureSerie(){
+  var a=iso(), d=premierJour(), suite=[];
+  for(var i=0;i<400&&d<=a;i++){
+    suite.push(jourPlein(d)?1:(((db.jours||{})[d]||{}).blanc?0:-1));
+    d=isoPlus(d,1);
+  }
+  var best=0, cur=0;
+  suite.forEach(function(v){
+    if(v===1){ cur++; if(cur>best) best=cur; }
+    else if(v===-1) cur=0;
+  });
+  return best;
+}
+
+/* ---------- LES JETONS ----------
+   Un jeton gagné par semaine, ajouté au total : ils s'accumulent, ils ne se
+   remettent pas à zéro. Un jeton part tout seul le jour où tes trois tâches
+   ne sont pas toutes tombées — la journée devient blanche, ta série tient et
+   ton altitude ne bouge pas. Sans jeton en réserve, la série s'arrête.
+
+   Chaque journée terminée est réglée une seule fois : `meta.jetonsAu` retient
+   jusqu'où on est allé, donc rouvrir l'app dix fois ne consomme rien de plus.
+   Rien n'est demandé, rien n'est à confirmer : ça se fait en silence. */
+function jetonsReste(){ return Math.max(0,((db.jetons||{}).reste)||0); }
+
+async function reglerJetons(){
+  var a=iso(), l=lundi(a), debut=premierJour(), jt=db.jetons||{};
+
+  /* le crédit hebdomadaire, rattrapé même si l'app est restée fermée un mois */
+  if(!jt.semaine||jt.semaine>l){
+    jt={ semaine:l, reste:(jt.reste!=null?jt.reste:JETON_SEMAINE) };
+    await put("/jetons",jt); db.jetons=jt;
+  }
+  else if(jt.semaine<l){
+    var sem=Math.round(joursEntre(jt.semaine,l)/7);
+    if(sem>0){
+      jt={ semaine:l, reste:(jt.reste||0)+sem*JETON_SEMAINE };
+      await put("/jetons",jt); db.jetons=jt;
+    }
+  }
+
+  /* Les journées terminées, une par une, jamais celle en cours.
+     Au tout premier passage on part d'aujourd'hui : juger après coup des
+     journées d'avant l'existence de cette règle viderait la réserve d'un coup
+     pour des jours où il n'y avait rien à respecter. */
+  var d=(db.meta&&db.meta.jetonsAu)||a;
+  if(d<isoPlus(debut,1)) d=isoPlus(debut,1);
+  var reste=jetonsReste(), pris=[];
+  for(var i=0;i<400&&d<a;i++){
+    var jr=(db.jours||{})[d]||{};
+    if(!jourPlein(d)&&!jr.blanc&&reste>0){ pris.push(d); reste--; }
+    d=isoPlus(d,1);
+  }
+  if(pris.length){
+    var w={}; pris.forEach(function(k){ w[k+"/blanc"]=1; });
+    await patch("/jours",w);
+    pris.forEach(function(k){ db.jours[k]=Object.assign({},db.jours[k],{blanc:1}); });
+    await patch("/jetons",{reste:reste}); db.jetons.reste=reste;
+  }
+  if(!db.meta||db.meta.jetonsAu!==d){ await patch("/meta",{jetonsAu:d}); if(db.meta) db.meta.jetonsAu=d; }
 }
 
 /* ============================================================
@@ -653,10 +865,13 @@ async function fermerParent(x){
 async function terminer(x,min){
   if(!x) return;
   var maj={fait:now()}; if(min!=null) maj.passe=Math.round(min);
+  /* la récompense part avant le réseau : la faire attendre deux allers-retours,
+     c'est la décrocher du geste qui l'a méritée */
+  if(T()[x.id]) T()[x.id].fait=maj.fait;
+  celebrer(x,true);
   await patch("/tasks/"+x.id,maj);
   await put("/live",null);
   var p=await fermerParent(x);
-  celebrer(x,true);
   if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
 }
@@ -673,13 +888,42 @@ async function reporter(x){
 async function basculer(x){
   if(x.fait){ await patch("/tasks/"+x.id,{fait:null}); if(T()[x.id]) T()[x.id].fait=null; rendre(); return; }
   var t=now();
-  await patch("/tasks/"+x.id,{fait:t});
   if(T()[x.id]) T()[x.id].fait=t;
+  celebrer(x,true);
+  await patch("/tasks/"+x.id,{fait:t});
   await marquerGeste(x,0);
   var p=await fermerParent(x);
-  celebrer(x,true);
   if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
+}
+
+/* ---------- MASQUER EN UN SEUL GESTE ----------
+   Le cadenas est sur la ligne elle-même : pas de fiche à ouvrir, pas de menu.
+   C'est la seule façon que ce soit réellement utilisé. */
+async function basculerPrive(id){
+  var x=T()[id]; if(!x) return;
+  var v=x.prive?null:1;
+  x.prive=v; vibre(12);
+  await patch("/tasks/"+id,{prive:v});
+  toast(v?"🔒 Caché — le lien invité ne le voit plus":"👁 Visible par le lien invité");
+  rendre();
+}
+async function basculerPriveReve(k){
+  var v=(db.reves||{})[k]; if(!v) return;
+  var p=v.prive?null:1;
+  v.prive=p; vibre(12);
+  await patch("/reves/"+k,{prive:p});
+  toast(p?"🔒 Caché — le lien invité ne le voit plus":"👁 Visible par le lien invité");
+  rendre();
+}
+/* Le bouton lui-même. Jamais affiché au témoin : chez lui, ce qui est caché
+   n'existe pas, et le reste n'a pas de cadenas à basculer. */
+function boutonLock(id,prive){
+  if(maman) return "";
+  return '<button class="lk'+(prive?" on":"")+'" data-lock="'+esc(id)+'" '+
+    'title="'+(prive?"Caché du lien invité":"Visible par le lien invité")+'" '+
+    'aria-label="'+(prive?"Caché du lien invité":"Visible par le lien invité")+'">'+
+    (prive?"🔒":"🔓")+'</button>';
 }
 
 /* ============================================================
@@ -687,45 +931,110 @@ async function basculer(x){
    ============================================================ */
 var MOTS_FIN=["Réglé.","Fait.","Une de moins.","C'est derrière toi.","Terminé.","Rayé."];
 var MOTS_GESTE=["Compte comme une victoire.","Tu l'as touché.","Le plus dur est fait.","Départ pris."];
+var MOTS_PLEIN=["Journée pleine. 🔥","Trois sur trois. 🔥","La journée est complète. 🔥"];
+/* la grande fête ne se déclenche qu'une fois par jour, à la tâche qui ferme
+   le trois sur trois — sinon elle ne voudrait plus rien dire */
+var fetePleineLe=null;
+
 function celebrer(x,complet,vieux){
-  var f=el("fete"); f.classList.remove("hide");
-  var g=gestesLe(iso()).length+1;
+  var f=el("fete"), a=iso();
+  var pleine=!vieux&&jourPlein(a)&&fetePleineLe!==a;
+  if(pleine) fetePleineLe=a;
+  f.classList.remove("hide");
+  f.classList.toggle("pleine",!!pleine);
+  var g=gestesLe(a).length+1;
   var mot=vieux?"Déjà réglé. 👍"
+        :pleine?MOTS_PLEIN[Math.floor(Math.random()*MOTS_PLEIN.length)]
         :complet?MOTS_FIN[Math.floor(Math.random()*MOTS_FIN.length)]
                 :MOTS_GESTE[Math.floor(Math.random()*MOTS_GESTE.length)];
   var sous = x&&x.t ? esc(x.t.length>52?x.t.slice(0,50)+"…":x.t) : "";
-  f.innerHTML='<div class="mot">'+esc(mot)+'<small>'+sous+(vieux?'':' · '+g+' aujourd\'hui')+'</small></div>';
-  confettis(f); vibre([12,50,26]); bip();
-  setTimeout(function(){ f.classList.add("hide"); f.innerHTML=""; },1750);
+  var sr=pleine?serie():null;
+  f.innerHTML='<div class="mot">'+esc(mot)+
+    '<small>'+sous+(vieux?'':' · '+g+' aujourd\'hui')+'</small>'+
+    (sr?'<span class="gain">série portée à '+sr.n+' jour'+(sr.n>1?'s':'')+'</span>':'')+
+    '</div>';
+  effets(f,pleine);
+  vibre(pleine?[20,55,20,55,45]:[12,50,26]);
+  bip(pleine);
+  setTimeout(function(){
+    f.classList.add("hide"); f.classList.remove("pleine"); f.innerHTML="";
+  }, pleine?2700:1750);
 }
-function confettis(box){
-  var c=["#ff9f1c","#2ee27a","#ffd23f","#5ec8ff","#ff6b81"];
-  for(var i=0;i<28;i++){
-    var d=document.createElement("i"); d.className="part";
+
+/* ---------- LES EFFETS ----------
+   Rien de décoratif ici : c'est la récompense immédiate qui manque au cerveau
+   quand la tâche, elle, ne rapporte rien tout de suite. Le flash arrive avant
+   la conscience du geste, les ondes donnent l'impact, les confettis tombent
+   avec de la gravité, et les étincelles montent — comme une poussée. */
+function effets(box,pleine){
+  flash(box);
+  onde(box,pleine);
+  confettis(box,pleine?66:30);
+  etincelles(box,pleine?28:14);
+}
+function flash(box){
+  var d=document.createElement("i"); d.className="flash"; box.appendChild(d);
+  d.animate([{opacity:0},{opacity:1,offset:.12},{opacity:0}],
+    {duration:640,easing:"ease-out"}).onfinish=function(){ d.remove(); };
+}
+function onde(box,pleine){
+  for(var i=0;i<(pleine?3:2);i++)(function(i){
+    var d=document.createElement("i"); d.className="onde"; box.appendChild(d);
+    d.animate([{transform:"scale(.3)",opacity:.85},{transform:"scale("+(pleine?17:11)+")",opacity:0}],
+      {duration:900+i*190,delay:i*140,easing:"cubic-bezier(.15,.7,.3,1)"}).onfinish=function(){ d.remove(); };
+  })(i);
+}
+function confettis(box,n){
+  var c=["#ff9f1c","#2ee27a","#ffd23f","#5ec8ff","#ff6b81","#fff3c4"];
+  var formes=["","rond","ruban"];
+  n=n||30;
+  for(var i=0;i<n;i++){
+    var d=document.createElement("i");
+    d.className="part "+formes[i%3];
     d.style.background=c[i%c.length];
-    d.style.left=(38+Math.random()*24)+"%"; d.style.top=(46+Math.random()*8)+"%";
+    d.style.left=(42+Math.random()*16)+"%"; d.style.top=(44+Math.random()*10)+"%";
     box.appendChild(d);
     (function(d){
-      var a=Math.random()*Math.PI*2, v=120+Math.random()*200;
-      d.animate([{transform:"translate(0,0) rotate(0)",opacity:1},
-        {transform:"translate("+Math.cos(a)*v+"px,"+(Math.sin(a)*v+150)+"px) rotate("+(Math.random()*720-360)+"deg)",opacity:0}],
-        {duration:1150+Math.random()*550,easing:"cubic-bezier(.2,.7,.4,1)"}).onfinish=function(){ d.remove(); };
+      var ang=Math.random()*Math.PI*2, v=140+Math.random()*270;
+      var dx=Math.cos(ang)*v, dy=Math.sin(ang)*v;
+      var r1=Math.random()*360-180, r2=Math.random()*900-450;
+      d.animate([
+        {transform:"translate(0,0) rotate(0) scale(1)",opacity:1},
+        {transform:"translate("+(dx*.6)+"px,"+(dy*.6-45)+"px) rotate("+r1+"deg)",opacity:1,offset:.42},
+        {transform:"translate("+dx+"px,"+(dy+280)+"px) rotate("+r2+"deg) scale(.85)",opacity:0}
+      ],{duration:1250+Math.random()*850,easing:"cubic-bezier(.15,.6,.35,1)"})
+       .onfinish=function(){ d.remove(); };
     })(d);
   }
 }
+function etincelles(box,n){
+  for(var i=0;i<n;i++)(function(){
+    var d=document.createElement("i"); d.className="spark";
+    d.style.left=(Math.random()*100)+"%";
+    box.appendChild(d);
+    var h=(window.innerHeight||700)*(.45+Math.random()*.5);
+    d.animate([{transform:"translateY(0) scaleY(1)",opacity:0},
+               {opacity:1,offset:.15},
+               {transform:"translateY(-"+h+"px) scaleY(1.7)",opacity:0}],
+      {duration:900+Math.random()*750,delay:Math.random()*280,easing:"cubic-bezier(.2,.7,.3,1)"})
+     .onfinish=function(){ d.remove(); };
+  })();
+}
 var actx=null;
-function bip(){
+function bip(pleine){
   if(ls(K_SON)==="0") return;
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();
     var t=actx.currentTime;
-    [587.33,880,1174.66].forEach(function(f,i){
+    /* la journée pleine monte plus haut et finit sur une quinte : l'oreille
+       entend tout de suite que ce n'est pas la même chose */
+    (pleine?[587.33,880,1174.66,1567.98,2093]:[587.33,880,1174.66]).forEach(function(f,i){
       var o=actx.createOscillator(), g=actx.createGain();
       o.type="sine"; o.frequency.value=f;
       g.gain.setValueAtTime(0,t+i*.075);
-      g.gain.linearRampToValueAtTime(.13,t+i*.075+.012);
-      g.gain.exponentialRampToValueAtTime(.0001,t+i*.075+.3);
-      o.connect(g); g.connect(actx.destination); o.start(t+i*.075); o.stop(t+i*.075+.34);
+      g.gain.linearRampToValueAtTime(pleine?.15:.13,t+i*.075+.012);
+      g.gain.exponentialRampToValueAtTime(.0001,t+i*.075+(pleine?.42:.3));
+      o.connect(g); g.connect(actx.destination); o.start(t+i*.075); o.stop(t+i*.075+.46);
     });
   }catch(e){}
 }
@@ -746,6 +1055,44 @@ function rendre(){
   if(vue==="pourquoi"){ el("vPourquoi").classList.remove("hide"); rendrePourquoi(); }
   if(vue==="suivi"){ el("vMaman").classList.remove("hide"); rendreMaman(); }
   rendreFocus(); rendreNav();
+}
+
+/* ---------- LA SÉRIE, EN GROS ----------
+   Le seul endroit de l'app où un chiffre a le droit d'être spectaculaire.
+   La réserve de jetons vit juste en dessous : c'est elle qui explique
+   pourquoi la série tient, donc elle ne se cache pas dans les réglages. */
+var dernierStreak=null;
+function blocStreak(){
+  var sr=serie(), jr=jetonsReste();
+  var vues=Math.min(jr,8), pas="";
+  for(var i=0;i<vues;i++) pas+='<i class="jeton"></i>';
+  if(!jr) pas='<i class="jeton off"></i>';
+  var bj='<div class="jetons"><span class="pastilles">'+pas+'</span><span>'+
+    (jr?'<b>'+jr+'</b> jeton'+(jr>1?'s':'')+' en réserve':'aucun jeton en réserve')+
+    ' · <b>+1</b> chaque semaine</span></div>';
+
+  if(!sr.n){
+    return '<div class="streak vide"><div class="feu">🔥</div><div class="n">0</div>'+
+      '<div class="lab">jour d\'affilée à trois sur trois</div>'+
+      '<div class="sous">Coche les trois tâches d\'une journée et la série part.</div>'+bj+'</div>';
+  }
+  return '<div class="streak"><div class="feu">🔥</div>'+
+    '<div class="n" id="streakN">'+sr.n+'</div>'+
+    '<div class="lab">jour'+(sr.n>1?'s':'')+' d\'affilée à trois sur trois</div>'+
+    (sr.blanches?'<div class="sous">'+(sr.blanches>1
+      ? sr.blanches+' jetons ont tenu la série pendant tes jours manqués'
+      : 'un jeton a tenu la série pendant un jour manqué')+'</div>':'')+
+    bj+'</div>';
+}
+/* la série qui monte doit se voir bouger, pas juste changer de chiffre */
+function animerStreak(){
+  var n=el("streakN"); if(!n) return;
+  var v=serie().n;
+  if(dernierStreak!==null&&v>dernierStreak){
+    n.classList.add("pulse");
+    setTimeout(function(){ if(n) n.classList.remove("pulse"); },900);
+  }
+  dernierStreak=v;
 }
 
 /* ---------- MAINTENANT ---------- */
@@ -799,6 +1146,9 @@ function rendreMaintenant(){
     '<div><b>'+semPre+'</b><span>semaine passée</span></div>'+
     '<div class="v"><b>'+alt+'</b><span>altitude</span></div></div>';
 
+  /* la série et la réserve de jetons : le chiffre qu'il vient chercher */
+  htm+=blocStreak();
+
   if(gj.length){
     htm+='<div class="carte"><div class="tit">Aujourd\'hui</div>'+
       gj.slice(-5).reverse().map(function(g){
@@ -809,6 +1159,7 @@ function rendreMaintenant(){
   }
 
   el("vMaintenant").innerHTML=htm;
+  animerStreak();
   el("altLab").innerHTML='altitude <b>'+alt+'</b>'+
     (semPre&&sem>=semPre?'<span class="cmp">tu es devant ta semaine passée</span>':
      semPre?'<span class="cmp">'+(semPre-sem)+' gestes pour rejoindre ta semaine passée</span>':'');
@@ -854,7 +1205,7 @@ function rendreMaintenant(){
 /* ---------- FOCUS : 2 minutes, puis le choix ---------- */
 function rendreFocus(){
   var F=el("focus"), L=db.live;
-  if(!L||!L.id){ F.classList.add("hide"); F.innerHTML=""; F.dataset.id="";
+  if(!L||!L.id||liveMasque()){ F.classList.add("hide"); F.innerHTML=""; F.dataset.id="";
     if(tick){clearInterval(tick);tick=null;} return; }
 
   var cle=L.id+"|"+L.phase;
@@ -1112,26 +1463,39 @@ function ligne(x){
       '<div class="corps"><div class="txt">'+esc(x.t)+'</div><div class="ss">'+
         '<span>'+(av?av.fait+' / '+av.total+' étapes':'à découper')+'</span><span>'+esc(x.c||"")+'</span></div>'+
         (av?'<div class="jauge" style="margin:7px 0 0"><i style="width:'+Math.round(av.fait/av.total*100)+'%"></i></div>':'')+
-      '</div><div class="go">Ouvrir</div></div>';
+      '</div>'+boutonLock(x.id,x.prive)+'<div class="go">Ouvrir</div></div>';
   }
   return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'">'+
     '<div class="case">'+(x.fait?"✓":"")+'</div>'+
     '<div class="corps"><div class="txt">'+esc(x.t)+'</div><div class="ss">'+
       '<span>'+hm(x.m||15)+'</span><span>'+esc(x.c||"")+'</span>'+
       ((x.reports||0)>=2?'<span style="color:var(--jaune)">reportée '+x.reports+'×</span>':'')+
-    '</div></div>'+(x.fait?'':'<div class="go">Go</div>')+'</div>';
+      (attendDepuis(x)?'<span style="color:var(--jaune)">prévue il y a '+attendDepuis(x)+' j</span>':'')+
+    '</div></div>'+boutonLock(x.id,x.prive)+(x.fait?'':'<div class="go">Go</div>')+'</div>';
 }
 function brancherTaches(scope){
+  brancherLocks(scope);
   Array.prototype.forEach.call(scope.querySelectorAll(".tache[data-ch]"),function(n){
     n.onclick=function(){ ouvrirChantier(n.dataset.ch); };
   });
   Array.prototype.forEach.call(scope.querySelectorAll(".tache[data-id]"),function(n){
     var x=T()[n.dataset.id]; if(!x) return; x=Object.assign({},x); x.id=n.dataset.id;
-    var c=n.querySelector(".case"); if(c) c.onclick=function(e){ e.stopPropagation(); basculer(x); };
+    var c=n.querySelector(".case");
+    if(c) c.onclick=function(e){ e.stopPropagation(); n.classList.add("pop"); basculer(x); };
     var g=n.querySelector(".go"); if(g) g.onclick=function(e){ e.stopPropagation(); demarrer(x); };
     /* toucher le texte ouvre les réglages de la tâche */
     var corps=n.querySelector(".corps");
     if(corps) corps.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.id); };
+  });
+}
+/* Le cadenas doit couper le clic : sur une ligne, il est posé au milieu d'une
+   zone qui ouvre le chantier ou la fiche. */
+function brancherLocks(scope){
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-lock]"),function(b){
+    b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); basculerPrive(b.dataset.lock); };
+  });
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-lockr]"),function(b){
+    b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); basculerPriveReve(b.dataset.lockr); };
   });
 }
 
@@ -1153,8 +1517,12 @@ function editerTache(id){
     }).join("")+'</div>'+
     '<button class="btn plein" id="eOk" style="margin-top:14px">Enregistrer</button>'+
     (x.parent?'':'<button class="btn gris" id="eCh" style="margin-top:8px">🧱 '+(estChantier(x)?"Redevenir une tâche simple":"En faire un chantier à découper")+'</button>')+
+    '<button class="btn gris" id="ePriv" style="margin-top:8px">'+
+      (x.prive?'🔒 Cachée du témoin — la remontrer':'👁 Visible par le témoin — la cacher')+'</button>'+
     '<button class="btn gris" id="eSup" style="margin-top:8px;color:var(--rouge)">Ça ne s\'applique plus</button>'+
-    '<div class="mini">Changer la durée ajuste la hauteur de la montagne et ton pourcentage. C\'est voulu : une estimation plus juste vaut mieux qu\'un beau chiffre.</div>',
+    '<div class="mini">Changer la durée ajuste la hauteur de la montagne et ton pourcentage. C\'est voulu : une estimation plus juste vaut mieux qu\'un beau chiffre.</div>'+
+    '<div class="mini">Une tâche cachée disparaît de la page du témoin, avec ses étapes et tout ce qu\'elle a fait apparaître dans son fil. '+
+      'À savoir : ça la retire de son écran, ça ne la chiffre pas.</div>',
     function(box){
       var mm=x.m||15, pp=x.p||4;
       Array.prototype.forEach.call(box.querySelectorAll("[data-m]"),function(b){
@@ -1175,6 +1543,13 @@ function editerTache(id){
           fermer(); rendre(); if(dev) decouper(id);
         });
       };
+      box.querySelector("#ePriv").onclick=function(){
+        var v=x.prive?null:1;
+        patch("/tasks/"+id,{ prive:v }).then(function(){
+          if(T()[id]) T()[id].prive=v;
+          fermer(); toast(v?"Cachée du témoin 🔒":"Visible par le témoin"); rendre();
+        });
+      };
       box.querySelector("#eSup").onclick=function(){
         patch("/tasks/"+id,{ annule:now(), revu:now() }).then(function(){
           fermer(); toast("Retirée — sans crédit."); rendre();
@@ -1184,10 +1559,29 @@ function editerTache(id){
 }
 
 /* ---------- CE SOIR ---------- */
+/* Un créneau du plan : il se coche là où il est, sinon rien ne saurait jamais
+   si la tâche a été faite. Et s'il traîne, il dit depuis quand — factuellement,
+   sans reproche : « prévue il y a 3 jours », pas « 3 jours de retard ». */
+function slotPlan(id,jour){
+  var x=T()[id]; if(!x) return "";
+  var att=attendDepuis(x);
+  return '<div class="slot plein'+(x.fait?" faite":"")+'">'+
+    '<div class="case" data-coche="'+esc(id)+'">'+(x.fait?"✓":"")+'</div>'+
+    '<span class="cn">'+esc(x.t)+
+      (x.quand?'<div class="qd">⏰ '+esc(x.quand)+'</div>':'')+
+      (x.geste?'<div class="gs">→ '+esc(x.geste)+'</div>':'')+
+      (att&&!x.fait?'<div class="depuis">prévue <b>'+(att===1?"hier":"il y a "+att+" jours")+'</b> — elle reste là tant qu\'elle tient</div>':'')+
+      (!x.fait&&(!x.quand||!x.geste)?'<div class="manque">à compléter : quand + premier geste</div>':'')+
+    '</span>'+boutonLock(id,x.prive)+
+    '<button class="x" data-ed="'+esc(id)+'">✎</button>'+
+    '<button class="x" data-del="'+esc(id)+'" data-jour="'+esc(jour)+'">×</button></div>';
+}
+
 function rendreSoir(){
   var a=iso(), demain=isoPlus(a,1);
   var j=(db.jours||{})[demain]||{};
-  var plan=(j.plan||[]).filter(function(id){ return T()[id]; });
+  var plan=(j.plan||[]).filter(visibleId);
+  var planAuj=((((db.jours||{})[a])||{}).plan||[]).filter(visibleId);
   var gj=gestesLe(a), fj=faitesLe(a);
   var dim=new Date().getDay()===0;
   var htm='';
@@ -1200,20 +1594,22 @@ function rendreSoir(){
               :'<span style="color:var(--txt3)">Rien aujourd\'hui. Ça arrive. On regarde demain.</span>')+
     '</div></div>';
 
+  /* ce que tu avais prévu pour aujourd'hui — c'est ici que ça se coche */
+  if(planAuj.length){
+    var restant=planAuj.filter(function(id){ return !T()[id].fait; }).length;
+    htm+='<div class="carte"><h3>Ce que tu avais prévu aujourd\'hui</h3>'+
+      '<div class="aide">'+(restant
+        ? 'Coche ce que tu as fait. Ce qui reste glisse à demain et garde sa date — rien ne se perd.'
+        : 'Les trois sont tombées. C\'est une journée pleine.')+'</div>'+
+      planAuj.map(function(id){ return slotPlan(id,a); }).join("")+'</div>';
+  }
+
   /* le plan de demain : 3 max, avec contrat si-alors */
   htm+='<div class="carte"><h3>Demain — 3 maximum</h3>'+
     '<div class="aide">Trois, pas quatre. Une liste de dix demain matin, c\'est une liste de zéro demain soir.</div>';
   for(var i=0;i<3;i++){
     var id=plan[i];
-    if(id){
-      var x=T()[id];
-      htm+='<div class="slot plein"><span class="num">'+(i+1)+'</span><span class="cn">'+esc(x.t)+
-        (x.quand?'<div class="qd">⏰ '+esc(x.quand)+'</div>':'')+
-        (x.geste?'<div class="gs">→ '+esc(x.geste)+'</div>':'')+
-        (!x.quand||!x.geste?'<div class="manque">à compléter : quand + premier geste</div>':'')+
-        '</span><button class="x" data-ed="'+esc(id)+'">✎</button>'+
-        '<button class="x" data-del="'+esc(id)+'">×</button></div>';
-    }
+    if(id) htm+=slotPlan(id,demain);
     else htm+='<button class="slot" data-add="1"><span class="num">'+(i+1)+'</span><span class="cn">choisir une tâche…</span></button>';
   }
   if(plan.length){
@@ -1247,10 +1643,28 @@ function rendreSoir(){
 
   el("vSoir").innerHTML=htm;
 
+  brancherLocks(el("vSoir"));
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-add]"),function(n){ n.onclick=function(){ choisir(demain); }; });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-ed]"),function(n){ n.onclick=function(){ contrat(n.dataset.ed); }; });
+  Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-coche]"),function(n){
+    n.onclick=function(e){ e.stopPropagation();
+      var x=T()[n.dataset.coche]; if(!x) return;
+      var slot=n.closest?n.closest(".slot"):null; if(slot) slot.classList.add("pop");
+      x=Object.assign({},x); x.id=n.dataset.coche; basculer(x);
+    };
+  });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-del]"),function(n){
-    n.onclick=function(){ put("/jours/"+demain+"/plan",plan.filter(function(x){ return x!==n.dataset.del; })).then(rendre); };
+    n.onclick=function(){
+      /* on relit le plan au moment du clic : l'écran peut dater d'avant une
+         synchro, et écraser avec une version périmée effacerait autre chose */
+      var d=n.dataset.jour;
+      var p=((((db.jours||{})[d])||{}).plan||[]).filter(function(x){ return x!==n.dataset.del; });
+      put("/jours/"+d+"/plan",p)
+        /* on retire aussi sa date de prévision, sinon elle reviendrait
+           d'elle-même dans le plan du lendemain */
+        .then(function(){ return patch("/tasks/"+n.dataset.del,{prevu:null}); })
+        .then(function(){ if(T()[n.dataset.del]) T()[n.dataset.del].prevu=null; rendre(); });
+    };
   });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-b]"),function(n){ n.onclick=function(){ trier(n.dataset.b); }; });
   if(el("bSem")) el("bSem").onclick=noteSemaine;
@@ -1301,9 +1715,16 @@ function choisir(d){
       function brancher(){
         Array.prototype.forEach.call(zone.querySelectorAll("[data-pick]"),function(n){
           n.onclick=function(){
+            var id=n.dataset.pick;
             var j=(db.jours||{})[d]||{}, p=(j.plan||[]).slice();
-            if(p.indexOf(n.dataset.pick)<0&&p.length<3) p.push(n.dataset.pick);
-            put("/jours/"+d+"/plan",p).then(function(){ fermer(); contrat(n.dataset.pick); });
+            if(p.indexOf(id)<0&&p.length<3) p.push(id);
+            put("/jours/"+d+"/plan",p).then(function(){
+              /* la date de prévision ne s'écrase jamais : si la tâche traînait
+                 déjà depuis quatre jours, la remettre au plan ne remet pas son
+                 ancienneté à zéro */
+              var x=T()[id];
+              if(x&&!x.prevu){ x.prevu=d; return patch("/tasks/"+id,{prevu:d}); }
+            }).then(function(){ fermer(); contrat(id); });
           };
         });
       }
@@ -1408,6 +1829,24 @@ function graphique(){
 
   var d=s[n-1], pct=d.cible?Math.round(d.fait/d.cible*100):0;
 
+  /* ---- le rythme, jour par jour ----
+     La courbe du haut dit la vérité sur l'ampleur : quand il reste cinquante
+     heures, une bonne journée y est forcément un tout petit trait. Ça, on n'y
+     touche pas — mentir sur la proportion enlèverait au graphique la seule
+     chose qu'il apporte. On ajoute plutôt en dessous ce que chaque journée a
+     donné, à sa propre échelle : là, une bonne journée se voit. */
+  var HB=54, deltas=s.map(function(p,i){ return i?Math.max(0,p.fait-s[i-1].fait):p.fait; });
+  var maxB=0; deltas.forEach(function(v){ if(v>maxB) maxB=v; });
+  maxB=Math.max(maxB,30);
+  var bw=(W-PL-PR)/n;
+  var barres=deltas.map(function(v,i){
+    if(!v) return "";
+    var h=Math.max(2,v/maxB*(HB-10));
+    return '<rect x="'+(PL+i*bw+bw*0.16).toFixed(1)+'" y="'+(HB-2-h).toFixed(1)+'" '+
+      'width="'+Math.max(1.2,bw*0.68).toFixed(1)+'" height="'+h.toFixed(1)+'" fill="#ff8a2b" opacity=".85"/>';
+  }).join("");
+  var meilleurJour=maxB;
+
   /* zones de survol : une bande par jour, largeur minimale confortable */
   var zones=s.map(function(p,i){
     var w=(W-PL-PR)/Math.max(1,n-1);
@@ -1428,12 +1867,18 @@ function graphique(){
       '<line class="cross hide" id="gcross" y1="0" y2="'+H+'" stroke="rgba(255,255,255,.28)" stroke-width="1"/>'+
       zones+
     '</svg>'+
-    '<div class="glab"><span><i class="k" style="background:#ff8a2b"></i>fait '+heures(d.fait)+'</span>'+
-      '<span><i class="k" style="background:#8f9ab8"></i>total '+heures(d.cible)+'</span>'+
+    '<div class="glab"><span><i class="k" style="background:#ff8a2b"></i>réglé '+heures(d.fait)+' · '+pct+' %</span>'+
+      '<span><i class="k" style="background:#8f9ab8"></i>à jour sur tout : '+heures(d.cible)+'</span>'+
       '<span style="margin-left:auto;color:var(--txt3)">'+labelCourt(s[0].j)+' → aujourd\'hui</span></div>'+
     '<div class="gtip" id="gtip"></div>'+
     '</div>'+
-    '<div class="aide" style="margin-top:10px">La ligne pleine, c\'est ce que tu as réglé. La pointillée, c\'est la montagne — elle monte quand tu ajoutes, elle descend quand tu retires ce qui ne s\'applique plus.</div>'+
+    '<div class="aide" style="margin-top:10px">La ligne pleine, c\'est ce que tu as réglé. La pointillée en haut, c\'est la barre à atteindre pour être à jour sur tout — elle monte quand tu ajoutes, elle descend quand tu retires ce qui ne s\'applique plus.</div>'+
+    /* le rythme quotidien, à son échelle : c'est ici que les journées se voient */
+    '<div class="tit" style="margin:14px 0 0">Ce que chaque journée a donné</div>'+
+    '<div class="gbars"><svg viewBox="0 0 '+W+' '+HB+'" preserveAspectRatio="none" role="img" aria-label="Travail réglé chaque jour">'+
+      '<line x1="'+PL+'" y1="'+(HB-1)+'" x2="'+(W-PR)+'" y2="'+(HB-1)+'" stroke="rgba(255,255,255,.10)" stroke-width="1"/>'+
+      barres+'</svg></div>'+
+    '<div class="glab"><span style="color:var(--txt3)">chaque barre = une journée · la plus haute vaut '+heures(meilleurJour)+'</span></div>'+
     '<button class="autre" id="gTab" style="margin-top:2px">voir les chiffres</button>'+
     '<div id="gTable"></div>'+
     '</div>';
@@ -1476,7 +1921,8 @@ function brancherGraphique(){
 
 /* ---------- POURQUOI ---------- */
 function rendrePourquoi(){
-  var r=db.reves||{}, ids=Object.keys(r);
+  var r=db.reves||{};
+  var ids=Object.keys(r).filter(function(k){ return !(maman&&r[k]&&r[k].prive); });
   var tot=faites().length, best=meilleureSemaine(), reb=rebonds();
   var g=gestes().length;
   var m=montagne();
@@ -1496,6 +1942,7 @@ function rendrePourquoi(){
       '<div class="f"><b>'+g+'</b><span>gestes posés</span></div>'+
       '<div class="b"><b>'+best+'</b><span>meilleure semaine</span></div></div>'+
     '<div class="stats" style="margin-top:8px">'+
+      '<div class="b"><b>'+meilleureSerie()+'</b><span>plus longue série à trois sur trois</span></div>'+
       '<div class="v"><b>'+reb+'</b><span>fois où tu es reparti après un jour vide</span></div></div>'+
     '<div class="mini">Le dernier chiffre est le plus important. Repartir, c\'est la seule habileté qui change la trajectoire.</div>'+
     '</div>';
@@ -1507,7 +1954,10 @@ function rendrePourquoi(){
   ids.forEach(function(k){
     var v=r[k]||{};
     htm+='<div class="reve" data-r="'+esc(k)+'">'+
-      '<div class="h"><span class="e">'+esc(v.e||"⭐")+'</span><span class="n">'+esc(v.nom||"")+'</span></div>'+
+      '<div class="h"><span class="e">'+esc(v.e||"⭐")+'</span><span class="n">'+esc(v.nom||"")+'</span>'+
+        (maman?'':'<button class="lk'+(v.prive?" on":"")+'" data-lockr="'+esc(k)+'" '+
+          'aria-label="'+(v.prive?"Caché du lien invité":"Visible par le lien invité")+'">'+
+          (v.prive?"🔒":"🔓")+'</button>')+'</div>'+
       (v.quoi?'<div class="q">'+esc(v.quoi)+'</div>':'')+
       (v.pourquoi?'<div class="pq">'+esc(v.pourquoi)+'</div>':'')+
       '<div class="ed">✎ toucher pour préciser</div></div>';
@@ -1516,6 +1966,7 @@ function rendrePourquoi(){
 
   el("vPourquoi").innerHTML=htm;
   brancherGraphique();
+  brancherLocks(el("vPourquoi"));
   Array.prototype.forEach.call(el("vPourquoi").querySelectorAll("[data-r]"),function(n){
     n.onclick=function(){ editerReve(n.dataset.r); };
   });
@@ -1533,15 +1984,24 @@ function editerReve(k){
     '<textarea class="champ" id="rq" rows="4" placeholder="Ce que tu vois, ce que tu fais, avec qui, où…">'+esc(v.quoi||"")+'</textarea>'+
     '<div class="lb">Pourquoi tu veux ça ?</div>'+
     '<textarea class="champ" id="rp" rows="3" placeholder="Ce que ça change pour toi">'+esc(v.pourquoi||"")+'</textarea>'+
-    '<button class="btn plein" id="rok">Enregistrer</button>'+
-    (k?'<button class="btn gris" id="rdel" style="margin-top:8px;color:var(--rouge)">Retirer ce projet</button>':''),
+    '<button class="btn gris" id="rPriv">'+
+      (v.prive?'🔒 Caché du témoin':'👁 Visible par le témoin')+'</button>'+
+    '<button class="btn plein" id="rok" style="margin-top:8px">Enregistrer</button>'+
+    (k?'<button class="btn gris" id="rdel" style="margin-top:8px;color:var(--rouge)">Retirer ce projet</button>':'')+
+    '<div class="mini">Ce que tu vises ne regarde que toi si tu le décides. Caché, le projet n\'apparaît pas sur la page du témoin.</div>',
     function(box){
+      var priv=!!v.prive, bp=box.querySelector("#rPriv");
+      bp.onclick=function(){
+        priv=!priv;
+        bp.textContent=priv?"🔒 Caché du témoin":"👁 Visible par le témoin";
+      };
       box.querySelector("#rok").onclick=function(){
         var id=k||("r"+rid(4));
         patch("/reves/"+id,{ e:box.querySelector("#re").value.trim()||"⭐",
           nom:box.querySelector("#rn").value.trim()||"Sans nom",
           quoi:box.querySelector("#rq").value.trim()||null,
-          pourquoi:box.querySelector("#rp").value.trim()||null })
+          pourquoi:box.querySelector("#rp").value.trim()||null,
+          prive:priv?1:null })
           .then(function(){ fermer(); rendre(); });
       };
       if(box.querySelector("#rdel")) box.querySelector("#rdel").onclick=function(){
@@ -1553,12 +2013,12 @@ function editerReve(k){
 /* ---------- MAMAN ---------- */
 function rendreMaman(){
   var a=iso(), gj=gestesLe(a), demain=isoPlus(a,1);
-  var j=(db.jours||{})[demain]||{}, plan=(j.plan||[]).filter(function(id){ return T()[id]; });
+  var j=(db.jours||{})[demain]||{}, plan=(j.plan||[]).filter(visibleId);
   var htm='<div class="jour"><div class="d">'+esc(labelJour(a))+'</div>'+
     '<div class="s">Lucas aujourd\'hui</div></div>';
   if(!ls(K_QUI)) htm+='<button class="btn gris" id="bQui" style="margin-bottom:10px">Dis-moi ton prénom, pour signer tes messages</button>';
 
-  if(db.live&&db.live.id){
+  if(db.live&&db.live.id&&!liveMasque()){
     var mn=Math.floor((now()-db.live.debut)/6e4);
     htm+='<div class="encours"><div class="t">🔥 en train de le faire</div><div class="q">'+esc(db.live.t)+'</div>'+
       '<div class="d">commencé il y a '+(mn<1?"moins d\'une minute":mn+" min")+'</div></div>';
@@ -1659,33 +2119,50 @@ function attraper(){
     '<input class="champ" id="qi" placeholder="Ça vient de me passer par la tête…" autocomplete="off">'+
     '<button class="btn plein" id="qok">Dans la boîte</button>'+
     '<div class="mini">'+(act?'Tu es en train de faire quelque chose. Ça va dans la boîte — on n\'y touche pas avant ce soir.'
-      :'Ça va dans la boîte, tu la tries ce soir. C\'est ce qui t\'empêche d\'allonger ta liste pendant que tu la vides.')+'</div>',
+      :'Ça va dans la boîte, tu la tries ce soir. C\'est ce qui t\'empêche d\'allonger ta liste pendant que tu la vides.')+'</div>'+
+    /* un objectif de vie n'est pas une tâche : il ne passe pas par la boîte,
+       il s'écrit tout de suite, au moment où l'idée est claire */
+    '<button class="btn gris" id="qReve" style="margin-top:14px">⭐ Ce n\'est pas une tâche — c\'est un objectif de vie</button>',
     function(box){
       var i=box.querySelector("#qi"); setTimeout(function(){ i.focus(); },120);
       function go(){ var v=i.value.trim(); if(!v) return;
         pousser("boite",{ts:now(),t:v}).then(function(){ fermer(); toast("Dans la boîte."); rendre(); }); }
       box.querySelector("#qok").onclick=go;
       i.onkeydown=function(e){ if(e.key==="Enter") go(); };
+      box.querySelector("#qReve").onclick=function(){ fermer(); editerReve(null); };
     });
 }
 
 function reglages(){
-  var lien=location.origin+location.pathname+"#r="+room+"&m=1";
-  var jt=db.jetons||{};
+  var base=location.origin+location.pathname+"#r="+room;
+  var lien=base+"&m=1", mien=base;
+  var nCache=liste().filter(function(x){ return x.prive; }).length
+            +Object.keys(db.reves||{}).filter(function(k){ return (db.reves[k]||{}).prive; }).length;
   modale('<h3>Réglages</h3>'+
-    '<button class="btn plein" id="gLien">📋 Copier le lien de partage</button>'+
-    '<button class="btn gris" id="gSon" style="margin-top:8px">'+(ls(K_SON)==="0"?"🔇 Sons éteints":"🔊 Sons allumés")+'</button>'+
+    '<div class="lb">Le lien du témoin</div>'+
+    '<button class="btn plein" id="gLien">📋 Copier le lien du témoin</button>'+
+    '<div class="mini" style="margin-top:7px">Ce qui est marqué 🔒 n\'y apparaît pas'+
+      (nCache?' — <b>'+nCache+' élément'+(nCache>1?'s':'')+' caché'+(nCache>1?'s':'')+'</b> en ce moment':'')+
+      '.<br><span style="word-break:break-all;color:var(--txt2)">'+esc(lien)+'</span></div>'+
+    '<div class="lb" style="margin-top:15px">Ton lien à toi</div>'+
+    '<button class="btn gris" id="gMien">📋 Copier mon lien</button>'+
+    '<div class="mini" style="margin-top:7px">Celui-ci montre tout. À garder pour toi.'+
+      '<br><span style="word-break:break-all;color:var(--txt2)">'+esc(mien)+'</span></div>'+
+    '<div class="lb" style="margin-top:15px">Le reste</div>'+
+    '<button class="btn gris" id="gSon">'+(ls(K_SON)==="0"?"🔇 Sons éteints":"🔊 Sons allumés")+'</button>'+
     '<button class="btn gris" id="gSave" style="margin-top:8px">💾 Sauvegarder mes données</button>'+
-    '<div class="mini">Journées blanches ce mois-ci : <b>'+(jt.reste===undefined?JETONS_MOIS:jt.reste)+' sur '+JETONS_MOIS+'</b>. '+
-      'Une journée vide en consomme une automatiquement, sans faire tomber ton altitude.</div>'+
-    '<div class="mini">Le lien de partage donne accès à toute l\'application, plus un écran de suivi '+
-      'pour approuver ton plan et t\'envoyer un mot.<br><span style="word-break:break-all;color:var(--txt2)">'+esc(lien)+'</span></div>'+
-    '<div class="mini">Ton lien à toi, à garder : <br><span style="word-break:break-all;color:var(--txt2)">'+
-      esc(location.origin+location.pathname+"#r="+room)+'</span></div>',
+    '<div class="mini">Jetons en réserve : <b>'+jetonsReste()+'</b>. Tu en gagnes <b>1 par semaine</b> et ils s\'accumulent. '+
+      'Le jour où tes trois tâches ne tombent pas toutes, un jeton part tout seul : ta série tient et ton altitude ne bouge pas. '+
+      'Sans jeton, la série repart à zéro.</div>'+
+    '<div class="mini" style="color:var(--txt2)">⚠️ À savoir, pour que ce soit dit : cacher un élément le retire de l\'écran '+
+      'du témoin, pas de la base. Quelqu\'un qui a le lien du témoin et qui sait où chercher pourrait '+
+      'les retrouver. C\'est un rideau, pas un coffre-fort.</div>',
     function(box){
-      box.querySelector("#gLien").onclick=function(){
-        try{ navigator.clipboard.writeText(lien); toast("Lien copié ✓"); }catch(e){ toast("Copie le lien ci-dessous"); }
-      };
+      function copier(v){
+        try{ navigator.clipboard.writeText(v); toast("Lien copié ✓"); }catch(e){ toast("Copie le lien ci-dessous"); }
+      }
+      box.querySelector("#gLien").onclick=function(){ copier(lien); };
+      box.querySelector("#gMien").onclick=function(){ copier(mien); };
       box.querySelector("#gSon").onclick=function(){
         ls(K_SON,ls(K_SON)==="0"?"1":"0"); fermer(); toast(ls(K_SON)==="0"?"Sons éteints":"Sons allumés");
       };
@@ -1751,13 +2228,20 @@ async function demarrage(){
     if(typeof SEED!=="undefined"&&typeof REVES!=="undefined"
        &&(!db.meta||db.meta.seed!==SEED_VERSION||db.meta.reves!==REVES_VERSION)) await semer();
     await reglerJetons();
+    await reporterPlans();
   }
   rendre();
   setInterval(function(){ if(vue==="maintenant"||vue==="suivi") planifier(); },30000);
 }
 
 document.addEventListener("visibilitychange",function(){
-  if(!document.hidden){ planifier(); if(el("conn").dataset.s!=="live") connecter(); }
+  if(!document.hidden){
+    planifier();
+    if(el("conn").dataset.s!=="live") connecter();
+    /* l'app reste souvent ouverte d'un jour à l'autre : c'est ici que les
+       tâches prévues hier et pas faites glissent dans le plan du jour */
+    if(!maman) reporterPlans().then(planifier);
+  }
 });
 
 /* changer de salon (ou ouvrir le lien du témoin depuis une page déjà ouverte)
