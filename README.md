@@ -15,16 +15,18 @@ Les mécaniques implémentées viennent d'une revue de la littérature
 |---|---|---|
 | Contrat si-alors | chaque tâche du lendemain porte un « quand » et un premier geste | Gollwitzer & Sheeran 2006, d = 0.65 |
 | Geste de 2 minutes | le bouton lance 2 min ; **s'arrêter là compte comme une victoire complète** | Woolley & Fishbach 2018 |
-| Plafond de 3 | trois tâches maximum pour demain, imposé | Dalton & Spiller 2012 |
+| Plafond de 3 | trois tâches recommandées par jour. Le plafond dur est à neuf, atteint seulement par les reports — trois reste ce que l'app conseille et défend | Dalton & Spiller 2012 |
 | Altitude, pas série | un score qui redescend doucement et ne tombe jamais à zéro | Sharif & Shu 2017 ; Polivy & Herman |
-| Jetons | 1 gagné par semaine, cumulatifs. Le jour où les trois tâches ne tombent pas, un jeton part tout seul : la série tient, l'altitude ne bouge pas | Lally et al. 2010 |
+| Jetons | 1 gagné par semaine, **plus 1 par tranche de trois tâches réglées au-delà des trois du jour** (6 réglées = 1 jeton, 9 = 2). Cumulatifs. Le jour où trois tâches ne tombent pas, un jeton part tout seul : la série tient, l'altitude ne bouge pas | Lally et al. 2010 |
 | Avance offerte | un projet démarre à 15 % | Nunes & Drèze 2006 |
 | Preuve de capacité | écran de faits, dont le nombre de reprises après un jour vide | TMT-TDAH 2023 |
 | Minuterie de suffisance | à la fin du budget : « c'est assez bon » | Sirois, Molnar & Hirsch 2017 |
 | Témoin bienveillant | lien de partage : accès complet + un écran de suivi qui n'affiche **que** ce qui avance | Ryan & Deci ; Wohl et al. 2010 |
 | Graphique de montée | Y = travail accompli, X = les jours. La courbe ne redescend jamais ; ajouter des tâches déplace la cible sans effacer le fait | burn-up chart ; Koo & Fishbach 2012 |
 | Rythme quotidien | sous la courbe, une barre par journée, à sa propre échelle — parce qu'une bonne journée sur une montagne de 60 h reste un trait invisible | Amabile & Kramer 2011 |
-| Série de journées pleines | jours d'affilée où les trois tâches sont tombées, affichée en gros sur l'écran d'accueil. Un jour manqué la casse **seulement** s'il ne reste aucun jeton | Sharif & Shu 2017 |
+| Série de journées pleines | jours d'affilée où **trois tâches ont été réglées, n'importe lesquelles** — le plan ne décide pas, le nombre décide. Affichée en gros sur l'accueil. Un jour manqué la casse **seulement** s'il ne reste aucun jeton | Sharif & Shu 2017 |
+| Ça brûle | une tâche prévue qui passe minuit sans être cochée prend un halo de braise et s'ajoute à la journée **sans prendre la place** des trois nouvelles | Zeigarnik ; Masicampo & Baumeister 2011 |
+| Priorité | une étoile à un clic sur n'importe quelle tâche, depuis n'importe quel écran. Elle la sort des piles pour la mettre en tête de la liste, et la fait passer devant dans ce que l'app propose | — |
 | Gratification immédiate | flash, ondes, confettis à gravité, étincelles montantes et accord sonore — déclenchés **avant** l'aller-retour réseau. Une tâche qui ferme le trois sur trois a droit à une fête plus grosse, une seule fois par jour | Lieberman & Eisenberger ; boucle action → récompense |
 | Rien ne se perd | une tâche prévue et pas faite glisse au jour suivant et garde sa date : « prévue il y a 3 jours ». Le plafond de trois tient quand même | Zeigarnik ; Masicampo & Baumeister 2011 |
 

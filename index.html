@@ -182,6 +182,31 @@ h1,h2,h3,p{margin:0}
 /* depuis quand elle attend — un fait, pas un reproche */
 .depuis{font-size:11.5px;color:var(--txt2);margin-top:3px}
 .depuis b{color:var(--jaune);font-weight:700}
+/* ---------- LA FLAMME ----------
+   Une tâche qui a passé minuit sans être cochée brûle. Ce n'est pas une
+   punition : c'est le seul repère visuel qui distingue, dans une même liste,
+   ce qui vient d'être décidé de ce qui traîne depuis trois jours. */
+/* La braise respire par l'opacité d'un calque, pas par une box-shadow animée :
+   une ombre qui pulse force un repaint à chaque image, ce qui chauffe le
+   téléphone pour rien. Là, le GPU se contente de composer. */
+.slot.feu{position:relative;border-color:rgba(255,138,43,.75);
+  background:linear-gradient(135deg,rgba(255,138,43,.16),rgba(255,90,24,.05))}
+.slot.feu::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+  box-shadow:0 0 17px -3px rgba(255,138,43,.55),inset 0 0 18px -6px rgba(255,138,43,.85);
+  opacity:.25;animation:braise 2.6s ease-in-out infinite;will-change:opacity}
+@keyframes braise{0%,100%{opacity:.2}50%{opacity:1}}
+.slot.feu .fl-ico{flex:0 0 auto;font-size:17px;line-height:1.1;margin-top:1px;
+  animation:vacille .9s ease-in-out infinite alternate;will-change:transform}
+@keyframes vacille{from{transform:scale(.93) rotate(-4deg)}to{transform:scale(1.07) rotate(4deg)}}
+/* cochée, elle s'éteint : plus d'animation, plus de halo */
+.slot.feu.faite::after{display:none}
+.slot.feu.faite .fl-ico{animation:none;opacity:.35}
+@media (prefers-reduced-motion:reduce){
+  .slot.feu::after{animation:none;opacity:.7}
+  .slot.feu .fl-ico{animation:none}
+}
+/* le bloc des reportées, séparé des trois du jour */
+.bloc-feu{border-color:rgba(255,138,43,.4)}
 .script{background:#05070f;border:1px solid var(--bord);border-radius:12px;padding:14px;margin-top:11px;
   font-size:14.5px;line-height:1.6}
 .script .c{color:var(--flamme);font-weight:700}
@@ -235,6 +260,12 @@ h1,h2,h3,p{margin:0}
 .jeton{width:10px;height:10px;border-radius:50%;background:var(--bleu);box-shadow:0 0 9px rgba(94,200,255,.6)}
 .jeton.off{background:rgba(255,255,255,.14);box-shadow:none}
 .jetons b{color:var(--bleu);font-weight:800}
+/* la jauge du jour : des points qui se remplissent, pas un décompte */
+.jour-jauge{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:11px}
+.jour-jauge .pts{display:flex;gap:5px}
+.jour-jauge .pt{width:11px;height:11px;border-radius:3px;background:rgba(255,255,255,.13)}
+.jour-jauge .pt.on{background:var(--vert);box-shadow:0 0 8px rgba(46,226,122,.55)}
+.jour-jauge span{font-size:12px;color:var(--txt2)}
 
 /* ---------- ce que le témoin ne voit pas ---------- */
 .lock{color:var(--bleu);font-size:11px;font-weight:700}
@@ -247,6 +278,35 @@ h1,h2,h3,p{margin:0}
 /* couper une tâche en morceaux : le geste qui débloque, donc toujours à portée */
 .lk.cut{color:var(--flamme);opacity:.72}
 .lk.cut:active{background:rgba(255,138,43,.2)}
+/* l'étoile de priorité */
+.lk.star{color:var(--txt3);opacity:.6;font-size:15px}
+.lk.star.on{opacity:1;color:var(--jaune);background:rgba(255,210,63,.16);
+  box-shadow:inset 0 0 0 1px rgba(255,210,63,.4)}
+.lk.star:active{background:rgba(255,210,63,.2)}
+.prio-tete .tit{color:var(--jaune)}
+
+/* le compte du jour : une progression, jamais une dette */
+.compte-jour{font-size:13.5px;color:var(--txt2);margin:2px 0 11px;padding:9px 12px;border-radius:11px;
+  background:var(--surf);border:1px solid var(--bord)}
+.compte-jour b{color:var(--txt);font-size:17px;font-weight:800;margin-right:3px}
+.compte-jour.plein{background:rgba(46,226,122,.10);border-color:rgba(46,226,122,.32)}
+.compte-jour.plein b{color:var(--vert)}
+.compte-jour span{color:var(--txt3)}
+/* les réglées, repliées pour laisser la place */
+.replier{display:block;width:100%;text-align:left;padding:9px 2px;margin-top:4px;
+  font-size:13px;color:var(--txt3)}
+.replier:active{color:var(--txt2)}
+/* l'offre des trois suivantes : un bonus, pas une exigence */
+.offre{margin-top:12px;padding:14px 15px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(94,200,255,.13),rgba(94,200,255,.03));
+  border:1px solid rgba(94,200,255,.30)}
+.offre .t{font-family:inherit;font-weight:700;font-size:15px;color:var(--bleu)}
+.offre .d{font-size:13.5px;color:var(--txt2);margin-top:4px;line-height:1.5}
+
+/* l'avertissement quand le plan d'un jour se remplit */
+.note-max{font-size:13px;line-height:1.5;padding:11px 13px;margin-bottom:11px;border-radius:11px;
+  background:rgba(255,107,129,.12);border:1px solid rgba(255,107,129,.35);color:#ffc9d1}
+.note-max.doux{background:rgba(255,210,63,.10);border-color:rgba(255,210,63,.32);color:#ffe9a8}
 
 /* ---------- pourquoi ---------- */
 .reve{border-radius:var(--r);padding:15px;margin-top:11px;background:var(--surf);border:1px solid var(--bord)}
@@ -388,6 +448,8 @@ var K_ROOM="dec-room", K_SON="dec-son", K_QUI="dec-qui";
 var CIBLE_JOUR=3;        /* 3 gestes/jour = altitude pleine */
 var GESTE_SEC=120;       /* le geste d'entrée : 2 minutes */
 var JETON_SEMAINE=1;     /* un jeton gagné par semaine, qui s'accumule */
+var CIBLE_PLAN=3;        /* trois par jour : la recommandation forte */
+var MAX_PLAN=9;          /* le plafond dur, reports d'hier compris */
 
 /* ============================================================
    OUTILS
@@ -446,7 +508,7 @@ var db={ tasks:{}, gestes:{}, jours:{}, semaines:{}, reves:{}, cheers:{}, boite:
 /* `maman` = la page a été ouverte par le lien de partage. Mêmes droits que
    Lucas, plus l'écran de suivi. Le nom est resté celui du premier usage. */
 var room, maman=false, vue="maintenant", filtre="tout", ouverts={}, propose=null, tick=null;
-var recherche="";
+var recherche="", voirReglees=false;
 
 function T(){ return db.tasks||(db.tasks={}); }
 
@@ -728,6 +790,11 @@ function toucheeAuj(id){
 }
 function scorer(x){
   return (5-(x.p||4))*26 + Math.max(0,40-(x.m||15))*0.55 + Math.min(x.reports||0,8)*9
+    /* marquée prioritaire : elle passe devant tout le reste, sinon l'étoile ne
+       serait qu'une décoration */
+    + (x.prio?500:0)
+    /* et ce qui brûle depuis des jours remonte aussi */
+    + Math.min(attendDepuis(x),10)*12
     /* déjà touchée aujourd'hui : on passe à autre chose plutôt que de tourner en rond */
     - (toucheeAuj(x.id)?200:0);
 }
@@ -755,17 +822,26 @@ function planDuJour(){
 }
 
 /* ---------- LES TÂCHES PRÉVUES QUI N'ONT PAS ÉTÉ FAITES ----------
-   Une tâche que tu avais prévue pour un jour donné ne s'évapore pas le
-   lendemain : elle glisse dans le plan du jour et garde la date à laquelle tu
-   l'avais prévue, ce qui permet de dire depuis quand elle attend.
+   Une tâche prévue pour un jour donné ne s'évapore pas le lendemain : elle
+   glisse dans le plan du jour et garde la date à laquelle tu l'avais prévue,
+   ce qui permet de dire depuis quand elle attend et de la faire brûler.
 
-   Le plafond de trois tient quand même. Au-delà, les plus anciennes prennent
-   les places et les autres reviennent dès qu'une place se libère : jamais un
-   plan de sept lignes le matin, jamais une tâche perdue non plus. */
+   Elle s'ajoute **en plus** des trois du jour : trois est la recommandation,
+   pas une place à voler. Le plafond dur est à neuf — au-delà, les plus
+   anciennes restent en attente et reviennent dès qu'une place se libère.
+   Rien ne se perd, mais l'écran ne devient jamais un mur. */
 function attendDepuis(x){
   if(!x||!x.prevu||x.fait||x.annule) return 0;
   return Math.max(0,joursEntre(x.prevu,iso()));
 }
+/* Le passage de minuit : on règle les jetons de la nuit écoulée, puis on fait
+   glisser ce qui n'a pas été coché. L'ordre compte — les jetons jugent la
+   journée d'hier, le report agit sur celle qui commence. */
+async function reporterJour(){
+  await reglerJetons();
+  await reporterPlans();
+}
+
 async function reporterPlans(){
   var a=iso(), plan=(((db.jours||{})[a]||{}).plan||[]).slice(), bouge=false;
   /* une tâche déjà inscrite pour un jour à venir n'est pas en retard : tu l'as
@@ -777,7 +853,7 @@ async function reporterPlans(){
   liste()
     .filter(function(x){ return !x.fait&&!x.annule&&x.prevu&&x.prevu<a&&plan.indexOf(x.id)<0&&!futurs[x.id]; })
     .sort(function(p,q){ return p.prevu<q.prevu?-1:p.prevu>q.prevu?1:0; })
-    .forEach(function(x){ if(plan.length<3){ plan.push(x.id); bouge=true; } });
+    .forEach(function(x){ if(plan.length<MAX_PLAN){ plan.push(x.id); bouge=true; } });
   if(bouge){ await put("/jours/"+a+"/plan",plan); (db.jours||{})[a]=Object.assign({},(db.jours||{})[a],{plan:plan}); }
 }
 
@@ -788,13 +864,33 @@ async function reporterPlans(){
    Un jour manqué ne remet pas tout à zéro : il consomme une des journées
    blanches du mois, exactement comme ailleurs dans l'app. Deux jours manqués
    d'affilée arrêtent la série — sans ça, elle ne voudrait plus rien dire. */
-function jourPlein(d){
-  var p=(((db.jours||{})[d]||{}).plan)||[];
-  if(p.length<3) return false;
-  var fin=Date.parse(d+"T23:59:59");
-  return p.every(function(id){
-    var x=T()[id]; return !!x&&!x.annule&&!!x.fait&&x.fait<=fin;
-  });
+/* ---------- CE QUI FAIT UNE JOURNÉE PLEINE ----------
+   Trois tâches réglées dans la journée. N'importe lesquelles : celles du plan,
+   une prise au vol sur l'écran d'accueil, une étape de chantier. Ce qui compte
+   est le nombre, pas la provenance — sinon une bonne journée passée à côté du
+   plan ne vaudrait rien, ce qui serait absurde.
+
+   Les tâches cochées pendant un ménage éclair (`vieux`) sont exclues par
+   `faitesLe` : elles étaient déjà réglées, elles ne sont pas du travail du jour. */
+function faitesDuJour(d){ return faitesLe(d).length; }
+function jourPlein(d){ return faitesDuJour(d) >= CIBLE_PLAN; }
+
+/* Chaque tranche de trois au-delà des trois premières vaut un jeton :
+   6 réglées = 1 jeton, 9 = 2 jetons, et ainsi de suite. */
+function bonusMerite(d){ return Math.max(0, Math.floor(faitesDuJour(d)/CIBLE_PLAN) - 1); }
+
+/* Le crédit se fait au fur et à mesure, jamais deux fois pour la même tranche :
+   `jours/<d>/bonus` retient combien ont déjà été versés ce jour-là. */
+async function majBonus(){
+  var a=iso();
+  var du=bonusMerite(a), deja=(((db.jours||{})[a]||{}).bonus)||0;
+  if(du<=deja) return 0;
+  var gagne=du-deja, reste=jetonsReste()+gagne;
+  await patch("/jours/"+a,{bonus:du});
+  db.jours[a]=Object.assign({},db.jours[a],{bonus:du});
+  await patch("/jetons",{reste:reste});
+  if(db.jetons) db.jetons.reste=reste;
+  return gagne;
 }
 function premierJour(){
   var a=iso();
@@ -949,9 +1045,11 @@ async function terminer(x,min){
   await patch("/tasks/"+x.id,maj);
   await put("/live",null);
   var p=await fermerParent(x);
+  var jeton=await majBonus();
   rendre();
   setTimeout(function(){
-    if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
+    if(jeton) fetJeton(jeton);
+    else if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
     else toastAction("Réglé.","annuler",function(){ decocher(x.id,null); });
   },1800);
   if(p) setTimeout(function(){
@@ -976,10 +1074,12 @@ async function basculer(x){
   await patch("/tasks/"+x.id,{fait:t});
   var cle=await marquerGeste(x,0);
   var p=await fermerParent(x);
+  var jeton=await majBonus();
   rendre();
   /* le filet de sécurité, après la fête pour ne pas la couvrir */
   setTimeout(function(){
-    if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
+    if(jeton) fetJeton(jeton);
+    else if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
     else toastAction("Réglé.","annuler",function(){ decocher(x.id,cle); });
   },1800);
   if(p) setTimeout(function(){
@@ -1028,6 +1128,26 @@ function boutonDiviser(id){
     'title="Diviser en étapes" aria-label="Diviser en étapes">✂</button>';
 }
 
+/* ---------- PRIORITÉ ----------
+   Un drapeau à un clic, comme le cadenas. Il ne sert pas qu'à afficher une
+   étoile : il remonte la tâche en tête de ce qui t'est proposé et la sort des
+   piles pour la mettre dans sa propre section. Sans ça, marquer prioritaire ne
+   changerait rien à ce que tu fais. */
+async function basculerPrio(id){
+  var x=T()[id]; if(!x) return;
+  var v=x.prio?null:1;
+  x.prio=v; vibre(12);
+  await patch("/tasks/"+id,{prio:v});
+  toast(v?"★ Prioritaire — elle passera devant":"Priorité retirée");
+  rendre();
+}
+function boutonPrio(id,prio){
+  if(maman) return "";
+  return '<button class="lk star'+(prio?" on":"")+'" data-prio="'+esc(id)+'" '+
+    'title="'+(prio?"Prioritaire":"Marquer prioritaire")+'" '+
+    'aria-label="'+(prio?"Prioritaire":"Marquer prioritaire")+'">'+(prio?"★":"☆")+'</button>';
+}
+
 /* Le bouton lui-même. Jamais affiché au témoin : chez lui, ce qui est caché
    n'existe pas, et le reste n'a pas de cadenas à basculer. */
 function boutonLock(id,prive){
@@ -1071,6 +1191,19 @@ function celebrer(x,complet,vieux){
   setTimeout(function(){
     f.classList.add("hide"); f.classList.remove("pleine"); f.innerHTML="";
   }, pleine?2700:1750);
+}
+
+/* Un jeton gagné mérite sa propre fête : c'est un acquis qui protégera une
+   journée future, pas seulement une tâche de moins. */
+function fetJeton(n){
+  var f=el("fete");
+  f.classList.remove("hide"); f.classList.add("pleine");
+  f.innerHTML='<div class="mot">🎟️ '+(n>1?n+" jetons gagnés":"Jeton gagné")+
+    '<small>Trois de plus que le compte. Il te couvrira une journée manquée.</small>'+
+    '<span class="gain">réserve : '+jetonsReste()+'</span></div>';
+  effets(f,true);
+  vibre([20,55,20,55,45]); bip(true);
+  setTimeout(function(){ f.classList.add("hide"); f.classList.remove("pleine"); f.innerHTML=""; },2700);
 }
 
 /* ---------- LES EFFETS ----------
@@ -1175,7 +1308,20 @@ function rendre(){
    pourquoi la série tient, donc elle ne se cache pas dans les réglages. */
 var dernierStreak=null;
 function blocStreak(){
-  var sr=serie(), jr=jetonsReste();
+  var sr=serie(), jr=jetonsReste(), a=iso();
+  var nf=faitesDuJour(a), manque=Math.max(0,CIBLE_PLAN-nf);
+  var palier=(Math.floor(nf/CIBLE_PLAN)+1)*CIBLE_PLAN;
+  /* la progression du jour : trois réglées et la série tient, peu importe
+     lesquelles. Une jauge, pas un décompte de ce qui reste à faire. */
+  var jauge='<div class="jour-jauge"><div class="pts">'+
+    (function(){ var s="";
+      for(var i=0;i<Math.max(CIBLE_PLAN,Math.min(nf,MAX_PLAN));i++)
+        s+='<i class="pt'+(i<nf?" on":"")+'"></i>';
+      return s; })()+'</div><span>'+
+    (manque
+      ? (nf?manque+' de plus et la journée est pleine':'trois réglées et la journée est pleine')
+      : 'journée pleine · '+(palier-nf)+' de plus pour un jeton')+
+    '</span></div>';
   var vues=Math.min(jr,8), pas="";
   for(var i=0;i<vues;i++) pas+='<i class="jeton"></i>';
   if(!jr) pas='<i class="jeton off"></i>';
@@ -1185,16 +1331,16 @@ function blocStreak(){
 
   if(!sr.n){
     return '<div class="streak vide"><div class="feu">🔥</div><div class="n">0</div>'+
-      '<div class="lab">jour d\'affilée à trois sur trois</div>'+
-      '<div class="sous">Coche les trois tâches d\'une journée et la série part.</div>'+bj+'</div>';
+      '<div class="lab">jour d\'affilée à trois réglées</div>'+
+      jauge+bj+'</div>';
   }
   return '<div class="streak"><div class="feu">🔥</div>'+
     '<div class="n" id="streakN">'+sr.n+'</div>'+
-    '<div class="lab">jour'+(sr.n>1?'s':'')+' d\'affilée à trois sur trois</div>'+
+    '<div class="lab">jour'+(sr.n>1?'s':'')+' d\'affilée à trois réglées</div>'+
     (sr.blanches?'<div class="sous">'+(sr.blanches>1
       ? sr.blanches+' jetons ont tenu la série pendant tes jours manqués'
       : 'un jeton a tenu la série pendant un jour manqué')+'</div>':'')+
-    bj+'</div>';
+    jauge+bj+'</div>';
 }
 /* la série qui monte doit se voir bouger, pas juste changer de chiffre */
 function animerStreak(){
@@ -1296,8 +1442,10 @@ function rendreMaintenant(){
   if(!x){ z.innerHTML=""; return; }
 
   var chantier=estChantier(x);
+  var att=attendDepuis(x);
   z.innerHTML='<button class="act" id="bGo">'+
-      '<div class="kick">'+(chantier?"un chantier à découper":esc(source))+'</div>'+
+      '<div class="kick">'+(x.prio?"★ prioritaire · ":"")+(att?"🔥 ":"")+
+        (chantier?"un chantier à découper":esc(source))+'</div>'+
       '<div class="quoi">'+esc(x.t)+'</div>'+
       (chantier
         ? '<div class="geste"><em>premier geste</em>écrire trois ou quatre étapes, pas plus</div>'
@@ -1425,7 +1573,7 @@ function ouvrirChantier(id){
         '<div class="ss"><span>'+(sous?sous.fait+' / '+sous.total+' étapes':hm(x.m||15))+'</span></div>'+
         (sous?'<div class="jauge" style="margin:7px 0 0"><i style="width:'+Math.round(sous.fait/sous.total*100)+'%"></i></div>':'')+
         '</div>'+
-        (x.fait?'':boutonDiviser(x.id))+
+        (x.fait?'':boutonPrio(x.id,x.prio))+(x.fait?'':boutonDiviser(x.id))+
         (x.fait?'':'<div class="go">'+(sous?'Ouvrir':'Go')+'</div>')+'</div>';
     }).join(""):'<div class="slot">aucune étape pour l\'instant</div>')+'</div>'+
     '<button class="btn plein" id="cAdd" style="margin-top:12px">＋ Ajouter des étapes</button>'+
@@ -1570,6 +1718,21 @@ function rendreListe(){
 
   /* Les étapes vivent dans leur chantier, les annulées nulle part. */
   l=l.filter(function(x){ return !x.annule&&!x.parent; });
+
+  /* ---------- PRIORITÉ ----------
+     En tête, toujours ouverte, et sortie des piles : une tâche marquée
+     prioritaire qu'il faut aller déplier dans une pile fermée n'aurait aucun
+     intérêt. */
+  var prios=l.filter(function(x){ return !x.fait&&x.prio; })
+             .sort(function(p,q){ return (p.p||4)-(q.p||4)||(p.m||15)-(q.m||15); });
+  if(filtre==="tout"&&prios.length){
+    var minP=0; prios.forEach(function(x){ minP+=(x.m||15); });
+    htm+='<div class="carte prio-tete" style="margin-top:0"><div class="tit">★ Priorité</div>'+
+      '<div class="aide">'+prios.length+(prios.length>1?' tâches':' tâche')+' · '+hm(minP)+
+      ' — elles passent devant dans ce que l\'app te propose.</div></div>'+
+      prios.map(ligne).join("");
+  }
+
   if(filtre==="fait"){
     var f=l.filter(function(x){ return x.fait; }).sort(function(a,b){ return b.fait-a.fait; });
     htm+='<div class="carte" style="margin-top:0"><div class="tit">'+f.length+' réglées depuis le début</div>'+
@@ -1584,7 +1747,9 @@ function rendreListe(){
   }
   else{
     [1,2,3,4].forEach(function(p){
-      var g=l.filter(function(x){ return !x.fait&&x.p===p; });
+      /* les prioritaires sont déjà en tête : les laisser aussi dans leur pile
+         ferait deux fois la même tâche sur le même écran */
+      var g=l.filter(function(x){ return !x.fait&&x.p===p&&!x.prio; });
       if(!g.length) return;
       g.sort(function(a,b){ return (a.m||15)-(b.m||15); });
       var min=0; g.forEach(function(x){ min+=(x.m||15); });
@@ -1653,7 +1818,7 @@ function ligne(x){
       '<div class="corps"><div class="txt">'+esc(x.t)+'</div><div class="ss">'+
         '<span>'+(av?av.fait+' / '+av.total+' étapes':'à découper')+'</span><span>'+esc(x.c||"")+'</span></div>'+
         (av?'<div class="jauge" style="margin:7px 0 0"><i style="width:'+Math.round(av.fait/av.total*100)+'%"></i></div>':'')+
-      '</div>'+boutonLock(x.id,x.prive)+'<div class="go">Ouvrir</div></div>';
+      '</div>'+boutonPrio(x.id,x.prio)+boutonLock(x.id,x.prive)+'<div class="go">Ouvrir</div></div>';
   }
   return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'">'+
     '<div class="case">'+(x.fait?"✓":"")+'</div>'+
@@ -1664,7 +1829,7 @@ function ligne(x){
       /* une étape trouvée par la recherche doit dire d'où elle vient */
       (x.parent&&T()[x.parent]?'<span style="color:var(--flamme)">🧱 '+esc(T()[x.parent].t)+'</span>':'')+
     '</div></div>'+
-    (x.fait?'':boutonDiviser(x.id))+boutonLock(x.id,x.prive)+
+    (x.fait?'':boutonPrio(x.id,x.prio))+(x.fait?'':boutonDiviser(x.id))+boutonLock(x.id,x.prive)+
     (x.fait
       ? (estChantier(x)?'<div class="go" data-open="'+esc(x.id)+'">Ouvrir</div>':'')
       : '<div class="go">Go</div>')+'</div>';
@@ -1692,6 +1857,9 @@ function brancherTaches(scope){
 /* Le cadenas doit couper le clic : sur une ligne, il est posé au milieu d'une
    zone qui ouvre le chantier ou la fiche. */
 function brancherLocks(scope){
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-prio]"),function(b){
+    b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); basculerPrio(b.dataset.prio); };
+  });
   Array.prototype.forEach.call(scope.querySelectorAll("[data-cut]"),function(b){
     b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); diviser(b.dataset.cut); };
   });
@@ -1798,8 +1966,11 @@ function editerTache(id,retour){
 function slotPlan(id,jour){
   var x=T()[id]; if(!x) return "";
   var att=attendDepuis(x);
-  return '<div class="slot plein'+(x.fait?" faite":"")+'">'+
+  /* elle a passé minuit sans être cochée : elle brûle */
+  var feu=att>0;
+  return '<div class="slot plein'+(x.fait?" faite":"")+(feu?" feu":"")+'">'+
     '<div class="case" data-coche="'+esc(id)+'">'+(x.fait?"✓":"")+'</div>'+
+    (feu?'<div class="fl-ico" aria-hidden="true">🔥</div>':'')+
     /* toucher le texte ouvre les réglages complets — nom, durée, pile, et
        « ça ne s'applique plus ». Le ✎ reste réservé au contrat si-alors. */
     '<span class="cn" data-edt="'+esc(id)+'">'+esc(x.t)+
@@ -1807,7 +1978,7 @@ function slotPlan(id,jour){
       (x.geste?'<div class="gs">→ '+esc(x.geste)+'</div>':'')+
       (att&&!x.fait?'<div class="depuis">prévue <b>'+(att===1?"hier":"il y a "+att+" jours")+'</b> — elle reste là tant qu\'elle tient</div>':'')+
       (!x.fait&&(!x.quand||!x.geste)?'<div class="manque">à compléter : quand + premier geste</div>':'')+
-    '</span>'+(x.fait?'':boutonDiviser(id))+boutonLock(id,x.prive)+
+    '</span>'+(x.fait?'':boutonPrio(id,x.prio))+(x.fait?'':boutonDiviser(id))+boutonLock(id,x.prive)+
     '<button class="x" data-ed="'+esc(id)+'">✎</button>'+
     '<button class="x" data-del="'+esc(id)+'" data-jour="'+esc(jour)+'">×</button></div>';
 }
@@ -1831,24 +2002,89 @@ function rendreSoir(){
               :'<span style="color:var(--txt3)">Rien aujourd\'hui. Ça arrive. On regarde demain.</span>')+
     '</div></div>';
 
-  /* ce que tu avais prévu pour aujourd'hui — c'est ici que ça se coche */
-  if(planAuj.length){
-    var restant=planAuj.filter(function(id){ return !T()[id].fait; }).length;
-    htm+='<div class="carte"><h3>Ce que tu avais prévu aujourd\'hui</h3>'+
-      '<div class="aide">'+(restant
-        ? 'Coche ce que tu as fait. Ce qui reste glisse à demain et garde sa date — rien ne se perd.'
-        : 'Les trois sont tombées. C\'est une journée pleine.')+'</div>'+
-      planAuj.map(function(id){ return slotPlan(id,a); }).join("")+'</div>';
+  /* ---------- AUJOURD'HUI ----------
+     On sépare ce qui a été décidé pour aujourd'hui de ce qui revient d'avant.
+     Les deux sont dans le même plan, mais les afficher en un seul bloc de neuf
+     lignes produirait exactement le mur qui paralyse. */
+  function reportee(id){ var x=T()[id]; return !!(x&&x.prevu&&x.prevu<a); }
+  var duJour=planAuj.filter(function(id){ return !reportee(id); });
+  var revenues=planAuj.filter(reportee);
+
+  /* Le compte du jour ne regarde pas le plan : trois réglées, n'importe
+     lesquelles, et la journée est pleine. */
+  var nFaites=faitesDuJour(a);
+  var manque=Math.max(0,CIBLE_PLAN-nFaites);
+  var palier=(Math.floor(nFaites/CIBLE_PLAN)+1)*CIBLE_PLAN;
+  var ouvertes=duJour.filter(function(id){ return !T()[id].fait; });
+  var reglees=duJour.filter(function(id){ return T()[id].fait; });
+
+  htm+='<div class="carte"><h3>Aujourd\'hui</h3>';
+  htm+='<div class="compte-jour'+(manque?'':' plein')+'">'+
+    '<b>'+nFaites+'</b> réglée'+(nFaites>1?'s':'')+' aujourd\'hui'+
+    (manque
+      ? '<span> · encore '+manque+' pour la journée pleine</span>'
+      : '<span> · journée pleine ✓ encore '+(palier-nFaites)+' pour un jeton 🎟️</span>')+
+    '</div>';
+
+  if(ouvertes.length){
+    htm+='<div class="aide">Ce qui n\'est pas coché avant minuit se met à brûler et revient demain.</div>'+
+      ouvertes.map(function(id){ return slotPlan(id,a); }).join("");
   }
 
-  /* le plan de demain : 3 max, avec contrat si-alors */
-  htm+='<div class="carte"><h3>Demain — 3 maximum</h3>'+
-    '<div class="aide">Trois, pas quatre. Une liste de dix demain matin, c\'est une liste de zéro demain soir.</div>';
-  for(var i=0;i<3;i++){
+  /* Les cochées se replient : elles ont laissé la place, mais restent
+     joignables si l'une a été cochée par erreur. */
+  if(reglees.length){
+    htm+='<button class="replier" data-voir="1">'+
+      (voirReglees?'▾ masquer ':'▸ voir ')+reglees.length+' tâche'+(reglees.length>1?'s':'')+
+      ' réglée'+(reglees.length>1?'s':'')+'</button>';
+    if(voirReglees) htm+=reglees.map(function(id){ return slotPlan(id,a); }).join("");
+  }
+
+  if(!ouvertes.length&&!reglees.length){
+    htm+='<div class="aide">Rien de prévu pour aujourd\'hui. Tu peux en choisir maintenant, '+
+      'ou laisser la journée telle quelle — l\'écran d\'accueil te proposera quoi faire.</div>';
+  }
+
+  /* L'invitation aux trois suivantes : elle n'apparaît qu'une fois la journée
+     pleine, pour que ce soit un bonus offert et jamais une exigence de plus. */
+  if(!manque&&planAuj.length<MAX_PLAN){
+    htm+='<div class="offre"><div class="t">🎟️ Trois de plus, un jeton</div>'+
+      '<div class="d">Ta journée est déjà pleine. Encore '+(palier-nFaites)+
+      ' tâche'+((palier-nFaites)>1?'s':'')+' et tu gagnes un jeton, qui couvrira une '+
+      'journée où tu n\'y arrives pas.</div>'+
+      '<button class="btn plein" data-add-auj="1" style="margin-top:11px">＋ En ajouter une</button></div>';
+  }
+  else if(ouvertes.length<CIBLE_PLAN&&planAuj.length<MAX_PLAN){
+    htm+='<button class="slot" data-add-auj="1"><span class="num">+</span>'+
+      '<span class="cn">'+(duJour.length?'ajouter une tâche à aujourd\'hui…':'choisir une tâche pour aujourd\'hui…')+'</span></button>';
+  }
+  htm+='</div>';
+
+  /* ---------- CE QUI BRÛLE ---------- */
+  if(revenues.length){
+    var vives=revenues.filter(function(id){ return !T()[id].fait; }).length;
+    htm+='<div class="carte bloc-feu"><h3>🔥 Ça brûle</h3>'+
+      '<div class="aide">'+(vives
+        ? (vives===1?'Une tâche a passé minuit sans être cochée. Elle s\'ajoute à ta journée — elle ne prend la place de personne.'
+                   : vives+' tâches ont passé minuit sans être cochées. Elles s\'ajoutent à ta journée — elles ne prennent la place de personne.')
+        : 'Éteintes. Tu les as rattrapées.')+'</div>'+
+      revenues.map(function(id){ return slotPlan(id,a); }).join("")+'</div>';
+  }
+
+  /* ---------- DEMAIN ---------- */
+  htm+='<div class="carte"><h3>Demain</h3>'+
+    '<div class="aide">'+(plan.length>CIBLE_PLAN
+      ? 'Tu en as '+plan.length+'. Trois tenues valent mieux que six espérées — mais c\'est ton appel.'
+      : 'Trois, pas quatre. Une liste de dix demain matin, c\'est une liste de zéro demain soir.')+'</div>';
+  var nCreneaux=Math.max(CIBLE_PLAN,plan.length);
+  for(var i=0;i<nCreneaux;i++){
     var id=plan[i];
     if(id) htm+=slotPlan(id,demain);
     else htm+='<button class="slot" data-add="1"><span class="num">'+(i+1)+'</span><span class="cn">choisir une tâche…</span></button>';
   }
+  if(plan.length>=nCreneaux&&plan.length<MAX_PLAN)
+    htm+='<button class="slot" data-add="1"><span class="num">+</span>'+
+         '<span class="cn">en ajouter une de plus…</span></button>';
   if(plan.length){
     var prets=plan.filter(function(id){ return T()[id].quand&&T()[id].geste; });
     htm+='<div class="script">Demain je fais :<br>'+plan.map(function(id,k){
@@ -1882,6 +2118,10 @@ function rendreSoir(){
 
   brancherLocks(el("vSoir"));
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-add]"),function(n){ n.onclick=function(){ choisir(demain); }; });
+  Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-add-auj]"),function(n){ n.onclick=function(){ choisir(a); }; });
+  Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-voir]"),function(n){
+    n.onclick=function(){ voirReglees=!voirReglees; rendreSoir(); };
+  });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-ed]"),function(n){ n.onclick=function(){ contrat(n.dataset.ed); }; });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-edt]"),function(n){
     n.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.edt); };
@@ -1915,8 +2155,18 @@ function rendreSoir(){
    but quand tu sais déjà ce que tu cherches. */
 function choisir(d){
   var tous=candidats().sort(function(a,b){ return scorer(b)-scorer(a); });
+  var a=iso();
+  var dejaLa=(((db.jours||{})[d]||{}).plan||[]).length;
+  var quand=d===a?"aujourd'hui":(d===isoPlus(a,1)?"demain":labelJour(d));
 
-  modale('<h3>Ajouter à demain</h3>'+
+  modale('<h3>Ajouter à '+esc(quand)+'</h3>'+
+    (dejaLa>=MAX_PLAN
+      ? '<div class="note-max">Tu en as déjà '+dejaLa+' pour '+esc(quand)+'. C\'est le maximum — '+
+        'retires-en une avant d\'en ajouter.</div>'
+      : dejaLa>=CIBLE_PLAN
+        ? '<div class="note-max doux">Tu en as déjà '+dejaLa+'. Au-delà de trois, la liste commence '+
+          'à peser plus qu\'elle n\'aide — mais tu peux continuer jusqu\'à '+MAX_PLAN+'.</div>'
+        : '')+
     '<input class="champ" id="chQ" placeholder="🔎 chercher…" autocomplete="off">'+
     '<div id="chList" style="max-height:52vh;overflow:auto;margin:0 -2px"></div>'+
     '<div class="mini" id="chNb"></div>',
@@ -1946,7 +2196,9 @@ function choisir(d){
           n.onclick=function(){
             var id=n.dataset.pick;
             var j=(db.jours||{})[d]||{}, p=(j.plan||[]).slice();
-            if(p.indexOf(id)<0&&p.length<3) p.push(id);
+            if(p.indexOf(id)>=0){ toast("Elle y est déjà."); fermer(); return; }
+            if(p.length>=MAX_PLAN){ toast("Maximum atteint pour cette journée."); return; }
+            p.push(id);
             put("/jours/"+d+"/plan",p).then(function(){
               /* la date de prévision ne s'écrase jamais : si la tâche traînait
                  déjà depuis quatre jours, la remettre au plan ne remet pas son
@@ -2322,10 +2574,15 @@ function demanderQui(){
 /* ---------- NAV ---------- */
 function rendreNav(){
   var soir=new Date().getHours()>=18, b=Object.keys(db.boite||{}).length;
+  /* la pastille s'allume quand quelque chose brûle : c'est plus utile qu'une
+     heure fixe pour un écran qui s'appelle maintenant « En cours » */
+  var brule=restantes().some(function(x){ return attendDepuis(x)>0; });
   el("nav").innerHTML=
     tab("maintenant","🚀","Maintenant",false)+
     tab("liste","📋","La liste",false)+
-    tab("soir","🌙","Ce soir",soir||b>0)+
+    /* l'identifiant interne reste « soir » : le renommer casserait les
+       références sans rien apporter à l'usage */
+    tab("soir","⏳","En cours",brule||soir||b>0)+
     tab("pourquoi","⭐","Le pourquoi",false)+
     /* le lien de partage ouvre l'app entière, plus un écran de suivi */
     (maman?tab("suivi","👥","Suivi",false):"");
@@ -2465,7 +2722,20 @@ async function demarrage(){
     await reporterPlans();
   }
   rendre();
-  setInterval(function(){ if(vue==="maintenant"||vue==="suivi") planifier(); },30000);
+  /* Minuit : le plan de demain devient celui d'aujourd'hui tout seul, puisque
+     les plans sont rangés par date. Mais si l'app est restée ouverte toute la
+     nuit, elle continue d'afficher la veille — on guette donc le changement de
+     jour pour reporter ce qui n'a pas été coché et tout redessiner. */
+  var jourAffiche=iso();
+  setInterval(function(){
+    if(iso()!==jourAffiche){
+      jourAffiche=iso();
+      if(!maman) reporterJour().then(function(){ rendre(); });
+      else rendre();
+      return;
+    }
+    if(vue==="maintenant"||vue==="suivi") planifier();
+  },30000);
 }
 
 document.addEventListener("visibilitychange",function(){
