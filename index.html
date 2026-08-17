@@ -133,6 +133,8 @@ h1,h2,h3,p{margin:0}
 .btn.gris{background:var(--surf);border:1px solid var(--bord);color:var(--txt2);font-size:15px;font-weight:600;padding:14px}
 
 /* ---------- liste ---------- */
+/* la recherche : premier élément de l'écran, toujours au même endroit */
+.champ.rech{margin-bottom:11px;font-size:15px;padding:12px 14px}
 .filtres{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;scrollbar-width:none}
 .filtres::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;padding:8px 13px;border-radius:999px;background:var(--surf);border:1px solid var(--bord);
@@ -402,6 +404,22 @@ function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localSt
 function rid(n){ var a=new Uint8Array(n||8); crypto.getRandomValues(a);
   return Array.prototype.map.call(a,function(b){ return pad(b.toString(16)); }).join(""); }
 function hm(m){ if(m<60) return m+" min"; var h=Math.floor(m/60), r=m%60; return h+" h"+(r?" "+pad(r):""); }
+/* chercher « electro » doit trouver « électros » : on compare sans accents */
+function sansAccents(s){
+  return (s||"").toLowerCase()
+    .replace(/[àâä]/g,"a").replace(/[éèêë]/g,"e").replace(/[îï]/g,"i")
+    .replace(/[ôö]/g,"o").replace(/[ùûü]/g,"u").replace(/ç/g,"c");
+}
+/* Une tâche correspond si le mot est dans son titre, sa catégorie, ou le titre
+   du chantier qui la contient — sinon chercher « électros » ne remonterait
+   aucune de ses étapes. */
+function correspond(x,f){
+  if(!f) return true;
+  var p=x.parent?T()[x.parent]:null;
+  return sansAccents(x.t).indexOf(f)>=0
+      || sansAccents(x.c).indexOf(f)>=0
+      || (p&&sansAccents(p.t).indexOf(f)>=0);
+}
 function toast(m){ var t=el("toast"); t.textContent=m; t.classList.remove("agir"); t.classList.add("on");
   clearTimeout(toast._h); toast._h=setTimeout(function(){t.classList.remove("on");},2800); }
 /* Un toast qui porte un bouton. Sert au « annuler » qui suit chaque cochage :
@@ -425,6 +443,7 @@ var db={ tasks:{}, gestes:{}, jours:{}, semaines:{}, reves:{}, cheers:{}, boite:
 /* `maman` = la page a été ouverte par le lien de partage. Mêmes droits que
    Lucas, plus l'écran de suivi. Le nom est resté celui du premier usage. */
 var room, maman=false, vue="maintenant", filtre="tout", ouverts={}, propose=null, tick=null;
+var recherche="";
 
 function T(){ return db.tasks||(db.tasks={}); }
 
@@ -1403,7 +1422,8 @@ function ouvrirChantier(id){
         (x.fait?'':'<div class="go">'+(sous?'Ouvrir':'Go')+'</div>')+'</div>';
     }).join(""):'<div class="slot">aucune étape pour l\'instant</div>')+'</div>'+
     '<button class="btn plein" id="cAdd" style="margin-top:12px">＋ Ajouter des étapes</button>'+
-    '<div class="mini">Un chantier ne se coche pas lui-même : il se ferme tout seul quand ses étapes sont finies.</div>',
+    '<div class="mini">Touche le texte d\'une étape pour changer sa durée, la découper encore, ou la retirer.<br>'+
+      'Un chantier ne se coche pas lui-même : il se ferme tout seul quand ses étapes sont finies.</div>',
     function(box){
       /* Les actions faites depuis l'intérieur d'un chantier doivent le
          redessiner : sinon la progression affichée ment le temps d'un clic. */
@@ -1420,6 +1440,11 @@ function ouvrirChantier(id){
           if(n.dataset.sous) ouvrirChantier(n.dataset.sous);
           else { fermer(); demarrer(x); }
         };
+        /* toucher le texte d'une étape ouvre ses réglages — sa durée compte
+           autant que celle d'une tâche ordinaire dans la hauteur de la
+           montagne, et elle n'était modifiable nulle part */
+        var corps=n.querySelector(".corps");
+        if(corps) corps.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.id,id); };
       });
       box.querySelector("#cAdd").onclick=function(){ decouper(id); };
     });
@@ -1518,7 +1543,13 @@ var LAB={1:["⚡ Vite fait","var(--p1)"],2:["🔴 Gros morceaux","var(--p2)"],
          3:["🟡 Quand ça adonne","var(--p3)"],4:["🟢 Plus tard","var(--p4)"]};
 function rendreListe(){
   if(menage){ rendreMenage(); return; }
+  /* le champ de recherche est réécrit à chaque rendu (le flux peut en
+     déclencher un pendant la frappe) : on lui rend son focus et son curseur */
+  var avaitFocus=document.activeElement&&document.activeElement.id==="qList";
   var l=liste(), htm='';
+  htm+='<input class="champ rech" id="qList" autocomplete="off" '+
+    'placeholder="🔎 chercher dans toutes les tâches" value="'+esc(recherche)+'">'+
+    '<div id="resRech"></div><div id="listeNormale">';
   var nRevoir=aRevoir().length;
   if(nRevoir){
     htm+='<button class="btn gris" id="bMenage" style="margin-bottom:12px">🧹 Ménage éclair — remettre la liste à jour</button>';
@@ -1558,7 +1589,13 @@ function rendreListe(){
     });
     htm+='<div class="mini" style="text-align:center;margin-top:16px">Les piles restent fermées exprès.<br>Une montagne ouverte, ça paralyse.</div>';
   }
+  htm+='</div>';
   el("vListe").innerHTML=htm;
+
+  var q=el("qList");
+  q.oninput=function(){ recherche=q.value; dessinerRecherche(); };
+  if(avaitFocus){ q.focus(); try{ q.setSelectionRange(q.value.length,q.value.length); }catch(e){} }
+  dessinerRecherche();
 
   if(el("bMenage")) el("bMenage").onclick=function(){ menage=true; menageVus=0; rendreMenage(); window.scrollTo(0,0); };
   Array.prototype.forEach.call(el("vListe").querySelectorAll(".chip"),function(b){
@@ -1569,6 +1606,38 @@ function rendreListe(){
   });
   brancherTaches(el("vListe"));
 }
+/* ---------- CHERCHER DANS TOUTE LA LISTE ----------
+   La liste normale cache beaucoup de choses, et c'est voulu : les piles sont
+   repliées, les étapes vivent dans leur chantier, les tâches réglées sont
+   derrière un filtre. Quand tu sais ce que tu cherches, tout ça devient un
+   obstacle — la recherche passe donc au travers de tout, y compris des étapes
+   et de ce qui est déjà réglé. */
+function dessinerRecherche(){
+  var z=el("resRech"), n=el("listeNormale");
+  if(!z||!n) return;
+  var f=sansAccents(recherche).trim();
+  if(!f){ z.innerHTML=""; n.classList.remove("hide"); return; }
+  n.classList.add("hide");
+
+  var res=liste().filter(function(x){ return !x.annule&&correspond(x,f); });
+  /* ce qui reste à faire d'abord, le réglé ensuite ; puis les plus courtes */
+  res.sort(function(a,b){
+    return (a.fait?1:0)-(b.fait?1:0) || (a.p||4)-(b.p||4) || (a.m||15)-(b.m||15);
+  });
+
+  if(!res.length){
+    z.innerHTML='<div class="carte" style="margin-top:0"><div class="rien">Rien qui correspond à « '+esc(recherche.trim())+' ».</div></div>';
+    return;
+  }
+  var reste=res.filter(function(x){ return !x.fait; }).length;
+  z.innerHTML='<div class="carte" style="margin-top:0"><div class="tit">'+
+      res.length+' résultat'+(res.length>1?'s':'')+
+      (reste<res.length?' · '+reste+' à faire':'')+'</div></div>'+
+    res.slice(0,80).map(ligne).join("")+
+    (res.length>80?'<div class="mini" style="text-align:center">Affiche les 80 premiers. Précise ta recherche.</div>':'');
+  brancherTaches(z);
+}
+
 function ligne(x){
   if(estChantier(x)&&!x.fait){
     var av=avanceChantier(x.id);
@@ -1585,6 +1654,8 @@ function ligne(x){
       '<span>'+hm(x.m||15)+'</span><span>'+esc(x.c||"")+'</span>'+
       ((x.reports||0)>=2?'<span style="color:var(--jaune)">reportée '+x.reports+'×</span>':'')+
       (attendDepuis(x)?'<span style="color:var(--jaune)">prévue il y a '+attendDepuis(x)+' j</span>':'')+
+      /* une étape trouvée par la recherche doit dire d'où elle vient */
+      (x.parent&&T()[x.parent]?'<span style="color:var(--flamme)">🧱 '+esc(T()[x.parent].t)+'</span>':'')+
     '</div></div>'+
     (x.fait?'':boutonDiviser(x.id))+boutonLock(x.id,x.prive)+
     (x.fait
@@ -1627,10 +1698,16 @@ function brancherLocks(scope){
 
 /* Régler une tâche : son titre, sa durée, sa pile.
    La durée compte pour de vrai — c'est elle qui fixe la hauteur de la montagne. */
-function editerTache(id){
+/* `retour` : l'identifiant du chantier d'où l'on vient, pour y revenir après
+   l'enregistrement plutôt que de retomber sur la liste. */
+function editerTache(id,retour){
   var x=T()[id]; if(!x) return;
   var choix=[5,10,15,20,30,45,60,90,120,180];
-  modale('<h3>Régler la tâche</h3>'+
+  function sortir(){
+    fermer(); rendre();
+    if(retour&&T()[retour]) ouvrirChantier(retour);
+  }
+  modale('<h3>'+(x.parent?"Régler l\'étape":"Régler la tâche")+'</h3>'+
     '<div class="lb">Ce qu\'il y a à faire</div>'+
     '<textarea class="champ" id="eT" rows="2">'+esc(x.t)+'</textarea>'+
     '<div class="lb">Combien de temps ça prend, à peu près</div>'+
@@ -1662,26 +1739,29 @@ function editerTache(id){
           Array.prototype.forEach.call(box.querySelectorAll("[data-p]"),function(o){ o.classList.toggle("on",o===b); }); };
       });
       box.querySelector("#eOk").onclick=function(){
-        patch("/tasks/"+id,{ t:box.querySelector("#eT").value.trim()||x.t, m:mm, p:pp })
-          .then(function(){ fermer(); rendre(); });
+        var maj={ t:box.querySelector("#eT").value.trim()||x.t, m:mm, p:pp };
+        /* en local tout de suite : la fenêtre du chantier se rouvre juste
+           après et doit déjà montrer la nouvelle durée */
+        Object.assign(x,maj);
+        patch("/tasks/"+id,maj).then(sortir);
       };
       box.querySelector("#eCut").onclick=function(){ fermer(); diviser(id); };
       if(box.querySelector("#eCh")) box.querySelector("#eCh").onclick=function(){
         patch("/tasks/"+id,{ chantier:null }).then(function(){
           if(T()[id]) T()[id].chantier=null;
-          fermer(); rendre();
+          sortir();
         });
       };
       box.querySelector("#ePriv").onclick=function(){
         var v=x.prive?null:1;
         patch("/tasks/"+id,{ prive:v }).then(function(){
           if(T()[id]) T()[id].prive=v;
-          fermer(); toast(v?"Cachée du témoin 🔒":"Visible par le témoin"); rendre();
+          toast(v?"Cachée du témoin 🔒":"Visible par le témoin"); sortir();
         });
       };
       box.querySelector("#eSup").onclick=function(){
         patch("/tasks/"+id,{ annule:now(), revu:now() }).then(function(){
-          fermer(); toast("Retirée — sans crédit."); rendre();
+          toast("Retirée — sans crédit."); sortir();
         });
       };
     });
@@ -1812,20 +1892,9 @@ function choisir(d){
     function(box){
       var q=box.querySelector("#chQ"), zone=box.querySelector("#chList");
 
-      function normal(s){
-        /* sans accents : chercher « electro » doit trouver « électros » */
-        return (s||"").toLowerCase().replace(/[àâä]/g,"a").replace(/[éèêë]/g,"e").replace(/[îï]/g,"i").replace(/[ôö]/g,"o").replace(/[ùûü]/g,"u").replace(/ç/g,"c");
-      }
       function dessiner(){
-        var f=normal(q.value).trim();
-        var sel=tous.filter(function(x){
-          if(!f) return true;
-          /* chercher « électros » doit remonter les étapes du chantier,
-             même si aucune ne contient le mot */
-          var p=x.parent?T()[x.parent]:null;
-          return normal(x.t).indexOf(f)>=0 || normal(x.c).indexOf(f)>=0
-              || (p&&normal(p.t).indexOf(f)>=0);
-        });
+        var f=sansAccents(q.value).trim();
+        var sel=tous.filter(function(x){ return correspond(x,f); });
         zone.innerHTML = sel.length
           ? sel.map(function(x){
               var p=x.parent?T()[x.parent]:null;
