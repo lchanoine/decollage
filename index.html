@@ -111,6 +111,9 @@ h1,h2,h3,p{margin:0}
 #focus .cat{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--txt3);text-align:center}
 #focus .titre{font-size:25px;font-weight:800;line-height:1.22;text-align:center;margin-top:12px;letter-spacing:-.02em}
 #focus .sous{text-align:center;font-size:15px;color:var(--flamme);margin-top:10px;font-weight:600;line-height:1.4}
+/* discret exprès : présent si le titre est mauvais, invisible sinon */
+.fedit{display:block;margin:9px auto 0;font-size:12.5px;color:var(--txt3);padding:5px 10px;border-radius:9px}
+.fedit:active{background:var(--surf);color:var(--txt2)}
 #focus .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .anneau{position:relative;width:196px;height:196px;display:grid;place-items:center}
 .anneau svg{position:absolute;inset:0;transform:rotate(-90deg)}
@@ -166,7 +169,7 @@ h1,h2,h3,p{margin:0}
 .slot.plein{border-style:solid;border-color:rgba(255,138,43,.38);background:rgba(255,138,43,.07);color:var(--txt)}
 .slot .num{width:21px;height:21px;border-radius:50%;background:var(--surf2);display:grid;place-items:center;
   font-size:11px;font-weight:800;flex:0 0 auto;margin-top:1px}
-.slot .cn{flex:1;min-width:0}
+.slot .cn{flex:1;min-width:0;cursor:pointer}
 .slot .qd{font-size:12px;color:var(--flamme);margin-top:3px}
 .slot .gs{font-size:12.5px;color:var(--txt2);margin-top:2px}
 .slot .manque{font-size:12px;color:var(--jaune);margin-top:3px}
@@ -1302,8 +1305,10 @@ function rendreMaintenant(){
       '<div class="meta">'+(chantier?"Ça ne se coche pas — ça se découpe. 2 minutes."
                                     :"2 minutes suffisent pour que ça compte")+'</div>'+
     '</button>'+
-    (plan.length?'':'<button class="autre" id="bAutre">↻ une autre</button>');
+    (plan.length?'':'<button class="autre" id="bAutre">↻ une autre</button>')+
+    '<button class="autre" id="bEdit">✎ modifier cette tâche</button>';
   el("bGo").onclick=function(){ if(chantier) decouper(x.id); else demarrer(x); };
+  el("bEdit").onclick=function(){ editerTache(x.id); };
   if(el("bAutre")) el("bAutre").onclick=function(){
     var v=propose; propose=tirer();
     if(propose&&v&&propose.id===v.id) propose=tirer();
@@ -1325,6 +1330,7 @@ function rendreFocus(){
     F.innerHTML=
       '<div class="cat">'+esc(L.c||"")+(geste?'':' · budget '+hm(L.m||15))+'</div>'+
       '<h2 class="titre">'+esc(L.t)+'</h2>'+
+      '<button class="fedit" id="fEdit">✎ modifier</button>'+
       (geste&&L.geste?'<div class="sous">'+esc(L.geste)+'</div>':'')+
       '<div class="mid">'+
         '<div class="anneau"><svg viewBox="0 0 100 100"><defs>'+
@@ -1337,6 +1343,7 @@ function rendreFocus(){
       '</div>'+
       '<div class="actions" id="fActions"></div>';
     majActions(false);
+    if(el("fEdit")) el("fEdit").onclick=function(){ editerTache(L.id); };
     if(tick) clearInterval(tick);
     tick=setInterval(tic,1000); tic();
   }
@@ -1704,9 +1711,14 @@ function editerTache(id,retour){
   var x=T()[id]; if(!x) return;
   var choix=[5,10,15,20,30,45,60,90,120,180];
   function sortir(){
-    fermer(); rendre();
+    fermer();
+    /* si on vient de modifier la tâche affichée en plein écran, il faut forcer
+       son redessin : le focus ne se refait que lorsque son identifiant change */
+    var F=el("focus"); if(F) F.dataset.id="";
+    rendre();
     if(retour&&T()[retour]) ouvrirChantier(retour);
   }
+  var enCours=!!(db.live&&db.live.id===id);
   modale('<h3>'+(x.parent?"Régler l\'étape":"Régler la tâche")+'</h3>'+
     '<div class="lb">Ce qu\'il y a à faire</div>'+
     '<textarea class="champ" id="eT" rows="2">'+esc(x.t)+'</textarea>'+
@@ -1743,7 +1755,14 @@ function editerTache(id,retour){
         /* en local tout de suite : la fenêtre du chantier se rouvre juste
            après et doit déjà montrer la nouvelle durée */
         Object.assign(x,maj);
-        patch("/tasks/"+id,maj).then(sortir);
+        patch("/tasks/"+id,maj).then(function(){
+          /* le titre affiché en plein écran est une copie : il faut le
+             corriger lui aussi, sinon l'ancien nom reste sous les yeux */
+          if(enCours){
+            db.live.t=maj.t; db.live.m=maj.m;
+            return patch("/live",{t:maj.t,m:maj.m});
+          }
+        }).then(sortir);
       };
       box.querySelector("#eCut").onclick=function(){ fermer(); diviser(id); };
       if(box.querySelector("#eCh")) box.querySelector("#eCh").onclick=function(){
@@ -1760,7 +1779,12 @@ function editerTache(id,retour){
         });
       };
       box.querySelector("#eSup").onclick=function(){
+        if(T()[id]) T()[id].annule=now();
         patch("/tasks/"+id,{ annule:now(), revu:now() }).then(function(){
+          /* on ne peut pas rester en plein écran sur une tâche qui vient
+             d'être retirée */
+          if(enCours){ db.live={}; return put("/live",null); }
+        }).then(function(){
           toast("Retirée — sans crédit."); sortir();
         });
       };
@@ -1776,7 +1800,9 @@ function slotPlan(id,jour){
   var att=attendDepuis(x);
   return '<div class="slot plein'+(x.fait?" faite":"")+'">'+
     '<div class="case" data-coche="'+esc(id)+'">'+(x.fait?"✓":"")+'</div>'+
-    '<span class="cn">'+esc(x.t)+
+    /* toucher le texte ouvre les réglages complets — nom, durée, pile, et
+       « ça ne s'applique plus ». Le ✎ reste réservé au contrat si-alors. */
+    '<span class="cn" data-edt="'+esc(id)+'">'+esc(x.t)+
       (x.quand?'<div class="qd">⏰ '+esc(x.quand)+'</div>':'')+
       (x.geste?'<div class="gs">→ '+esc(x.geste)+'</div>':'')+
       (att&&!x.fait?'<div class="depuis">prévue <b>'+(att===1?"hier":"il y a "+att+" jours")+'</b> — elle reste là tant qu\'elle tient</div>':'')+
@@ -1789,8 +1815,10 @@ function slotPlan(id,jour){
 function rendreSoir(){
   var a=iso(), demain=isoPlus(a,1);
   var j=(db.jours||{})[demain]||{};
-  var plan=(j.plan||[]).filter(visibleId);
-  var planAuj=((((db.jours||{})[a])||{}).plan||[]).filter(visibleId);
+  /* une tâche retirée d'un revers de main ne doit plus encombrer le plan */
+  function auPlan(id){ return visibleId(id)&&!T()[id].annule; }
+  var plan=(j.plan||[]).filter(auPlan);
+  var planAuj=((((db.jours||{})[a])||{}).plan||[]).filter(auPlan);
   var gj=gestesLe(a), fj=faitesLe(a);
   var dim=new Date().getDay()===0;
   var htm='';
@@ -1855,6 +1883,9 @@ function rendreSoir(){
   brancherLocks(el("vSoir"));
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-add]"),function(n){ n.onclick=function(){ choisir(demain); }; });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-ed]"),function(n){ n.onclick=function(){ contrat(n.dataset.ed); }; });
+  Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-edt]"),function(n){
+    n.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.edt); };
+  });
   Array.prototype.forEach.call(el("vSoir").querySelectorAll("[data-coche]"),function(n){
     n.onclick=function(e){ e.stopPropagation();
       var x=T()[n.dataset.coche]; if(!x) return;
@@ -1968,7 +1999,11 @@ function noteSemaine(){
 }
 function trier(k){
   var o=(db.boite||{})[k]; if(!o) return;
-  modale('<h3>'+esc(o.t)+'</h3><div class="lb">Dans quelle pile ?</div>'+
+  /* une idée attrapée à la volée est souvent mal écrite : on la corrige au
+     moment de la classer, pas plus tard */
+  modale('<div class="lb">L\'idée, telle que tu veux la lire demain</div>'+
+    '<textarea class="champ" id="bT" rows="2">'+esc(o.t)+'</textarea>'+
+    '<div class="lb">Dans quelle pile ?</div>'+
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     [1,2,3,4].map(function(p){ return '<button class="btn gris" data-p="'+p+'">'+LAB[p][0]+'</button>'; }).join("")+
     '<button class="btn plein" data-p="ch">🧱 C\'est un chantier — ça se découpe</button>'+
@@ -1978,9 +2013,10 @@ function trier(k){
       Array.prototype.forEach.call(box.querySelectorAll("[data-p]"),function(b){
         b.onclick=async function(){
           var id=null;
+          var titre=(box.querySelector("#bT").value||"").trim()||o.t;
           if(b.dataset.p!=="x"){
             id="n"+rid(4);
-            var t={}; t[id]={ t:o.t, c:"Nouveau", p:(b.dataset.p==="ch"?2:+b.dataset.p), m:15,
+            var t={}; t[id]={ t:titre, c:"Nouveau", p:(b.dataset.p==="ch"?2:+b.dataset.p), m:15,
                               ct:now(), fait:null, reports:0 };
             if(b.dataset.p==="ch") t[id].chantier=1;
             await patch("/tasks",t);
