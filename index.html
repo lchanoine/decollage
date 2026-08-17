@@ -218,6 +218,15 @@ h1,h2,h3,p{margin:0}
 .dur{padding:9px 13px;border-radius:11px;background:#05070f;border:1px solid var(--bord);
   font-size:13.5px;color:var(--txt2)}
 .dur.on{background:var(--flamme);border-color:var(--flamme);color:#1c0e04;font-weight:700}
+.dur em{font-style:normal;font-size:10.5px;opacity:.65;margin-left:4px}
+
+/* ---------- le recul, quand le temps est écoulé sans que ce soit fini ---------- */
+.recul{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.rec{text-align:left;padding:13px 15px;border-radius:13px;background:var(--surf);
+  border:1px solid var(--bord);transition:.12s}
+.rec:active{transform:scale(.99);background:var(--surf2)}
+.rec b{display:block;font-size:15px;font-weight:650;letter-spacing:-.008em}
+.rec span{display:block;font-size:12.5px;color:var(--txt3);margin-top:2px}
 
 /* ---------- graphique de montée ---------- */
 .hero{font-size:62px;font-weight:800;letter-spacing:-.04em;line-height:1;margin:4px 0 6px;
@@ -982,9 +991,50 @@ async function reglerJetons(){
 /* ============================================================
    ACTIONS
    ============================================================ */
-async function demarrer(x){
+/* ---------- LANCER UNE TÂCHE ----------
+   On choisit la durée à chaque fois. Le geste de deux minutes n'est plus une
+   première étape imposée : c'est devenu un seuil à l'intérieur du minuteur,
+   franchi quelle que soit la durée retenue. Tu peux donc viser 45 minutes et
+   t'arrêter à 3 en ayant quand même gagné. */
+var DUREES=[2,5,10,15,25,45,60];
+var K_DUREE="dec-duree";
+
+function demarrer(x){
   if(!x) return;
-  await put("/live",{ id:x.id, t:x.t, c:x.c, m:x.m||15, geste:x.geste||"", debut:now(), phase:"geste" });
+  var estim=x.m||15;
+  var derniere=+(ls(K_DUREE)||0)||estim;
+  var choix=DUREES.slice();
+  if(choix.indexOf(estim)<0) choix.push(estim);
+  choix.sort(function(a,b){ return a-b; });
+
+  modale('<h3>'+esc(x.t)+'</h3>'+
+    '<div class="lb">Tu te donnes combien de temps ?</div>'+
+    '<div class="durs" id="dDur">'+choix.map(function(v){
+      return '<button class="dur'+(v===derniere?" on":"")+'" data-min="'+v+'">'+
+        (v===2?"2 min":(v<60?v+" min":(v/60)+" h"))+
+        (v===estim&&v!==2?'<em> estimé</em>':'')+'</button>';
+    }).join("")+'</div>'+
+    '<button class="btn go" id="dGo" style="margin-top:15px">Partir</button>'+
+    '<div class="mini">Deux minutes suffisent pour que ça compte, quelle que soit la durée '+
+      'que tu choisis. Le minuteur te le dira au passage.</div>',
+    function(box){
+      var min=derniere;
+      Array.prototype.forEach.call(box.querySelectorAll("[data-min]"),function(b){
+        b.onclick=function(){
+          min=+b.dataset.min;
+          Array.prototype.forEach.call(box.querySelectorAll("[data-min]"),function(o){
+            o.classList.toggle("on",o===b);
+          });
+        };
+      });
+      box.querySelector("#dGo").onclick=function(){ fermer(); lancer(x,min); };
+    });
+}
+
+async function lancer(x,min){
+  ls(K_DUREE,String(min));
+  await put("/live",{ id:x.id, t:x.t, c:x.c, m:min, geste:x.geste||"",
+                      debut:now(), phase:"run", sec:min*60 });
   rendre();
 }
 async function marquerGeste(x,sec){
@@ -1500,6 +1550,31 @@ function rendreFocus(){
     var L2=db.live; if(!L2) return;
     var A=el("fActions"); if(!A) return;
     var x=T()[L2.id]; if(x) x.id=L2.id;
+    /* ---------- le minuteur à durée choisie ----------
+       Un seul compteur. Avant deux minutes, la sortie est un report sans
+       reproche. Après, le geste est acquis : la sortie devient « j'arrête ici »
+       et ouvre le moment de recul. */
+    if(L2.phase==="run"){
+      var acquis=(now()-L2.debut)/1000>=GESTE_SEC;
+      A.innerHTML = acquis
+        ? '<button class="btn go" id="r1">C\'est fait ✓</button>'+
+          '<button class="btn gris" id="r2">J\'arrête ici</button>'
+        : '<button class="btn go" id="r1">C\'est fait ✓</button>'+
+          '<button class="btn gris" id="r3">Pas capable là</button>';
+      if(el("r1")) el("r1").onclick=function(){
+        marquerGeste(x||{id:L2.id,t:L2.t},Math.min((now()-L2.debut)/1000,(L2.sec||120)));
+        terminer(x,(now()-L2.debut)/6e4);
+      };
+      if(el("r2")) el("r2").onclick=function(){
+        marquerGeste(x||{id:L2.id,t:L2.t},(now()-L2.debut)/1000);
+        var xx=x||{id:L2.id,t:L2.t};
+        stopper(xx,true);
+        /* le recul arrive après la petite fête, pour ne pas l'écraser */
+        setTimeout(function(){ reculer(xx); },1900);
+      };
+      if(el("r3")) el("r3").onclick=function(){ reporter(x); };
+      return;
+    }
     if(L2.phase==="geste"){
       A.innerHTML= fini
         ? '<button class="btn plein" id="a1">Je continue</button>'+
@@ -1530,14 +1605,32 @@ function rendreFocus(){
     var L2=db.live; if(!L2||!L2.debut) return;
     var c=el("chrono"); if(!c) return;
     var ec=(now()-L2.debut)/1000;
-    var prevu=L2.phase==="geste"?GESTE_SEC:(L2.m||15)*60;
+    var run=L2.phase==="run";
+    var prevu=run?(L2.sec||(L2.m||15)*60):(L2.phase==="geste"?GESTE_SEC:(L2.m||15)*60);
     var reste=prevu-ec, v=Math.abs(reste);
     c.innerHTML=(reste<0?"+":"")+Math.floor(v/60)+":"+pad(Math.floor(v%60))+
-      (L2.phase==="geste"&&reste>0?'<small>le temps que ça compte</small>':'');
+      ((L2.phase==="geste"||(run&&ec<GESTE_SEC))&&reste>0
+        ? '<small>'+Math.max(0,Math.ceil(GESTE_SEC-ec))+' s avant que ça compte</small>' : '');
     c.classList.toggle("over",reste<0);
     var arc=el("arc"); if(arc) arc.setAttribute("stroke-dashoffset",(282.7*Math.max(0,Math.min(1,ec/prevu))).toFixed(1));
 
     var nb=el("noteBox"); if(!nb) return;
+
+    /* le seuil des deux minutes, quelle que soit la durée choisie */
+    if(run&&ec>=GESTE_SEC&&nb.dataset.on!=="1"&&nb.dataset.on!=="2"){
+      nb.dataset.on="1";
+      nb.innerHTML='<div class="note gagne">✓ Deux minutes faites. <b>Ça compte comme une victoire complète.</b><br>'+
+        'Tout ce que tu ajoutes maintenant est du bonus.</div>';
+      vibre([25,60,25]); bip(); majActions(true);
+    }
+    /* la fin du temps qu'il s'était donné */
+    if(run&&reste<0&&nb.dataset.on!=="2"){
+      nb.dataset.on="2";
+      nb.innerHTML='<div class="note assez">Le temps que tu t\'étais donné est écoulé.<br>'+
+        '<b>C\'est assez bon.</b> Termine, ou arrête et on regardera ce qui bloque.</div>';
+      vibre([30,60,30]); majActions(true);
+    }
+
     if(L2.phase==="geste"&&reste<=0&&nb.dataset.on!=="1"){
       nb.dataset.on="1";
       nb.innerHTML='<div class="note gagne">✓ Deux minutes faites. <b>Ça compte comme une victoire complète.</b><br>'+
@@ -1551,6 +1644,77 @@ function rendreFocus(){
       vibre([30,60,30]);
     }
   }
+}
+
+/* ---------- LE RECUL ----------
+   Tu as travaillé sans finir. C'est le moment le plus utile de la journée et
+   celui que tout le monde saute : deux minutes de plus et on sait pourquoi ça
+   n'a pas abouti. Chaque réponse déclenche une action réelle — sans ça, ce
+   serait de l'introspection sans effet, ce qui est pire que rien. */
+function reculer(x){
+  if(!x||!x.id||!T()[x.id]) return;
+  var att=attendDepuis(T()[x.id]);
+  modale('<h3>Tu t\'es arrêté. C\'est correct.</h3>'+
+    '<div class="lb">Le temps que tu as mis est compté, la tâche est encore là. '+
+    'Une question avant de passer à autre chose : qu\'est-ce qui a bloqué&nbsp;?</div>'+
+    '<div class="recul">'+
+      '<button class="rec" data-r="gros"><b>C\'est plus gros que je pensais</b>'+
+        '<span>On la coupe en morceaux tout de suite</span></button>'+
+      '<button class="rec" data-r="moment"><b>Ce n\'était pas le bon moment</b>'+
+        '<span>On lui donne une heure et un endroit précis</span></button>'+
+      '<button class="rec" data-r="autre"><b>Autre chose est plus urgent</b>'+
+        '<span>On marque cette autre chose comme prioritaire</span></button>'+
+      '<button class="rec" data-r="temps"><b>J\'ai juste manqué de temps</b>'+
+        '<span>On repart, en choisissant mieux la durée</span></button>'+
+      '<button class="rec" data-r="plus"><b>Elle ne s\'applique plus</b>'+
+        '<span>On la retire, sans crédit</span></button>'+
+    '</div>'+
+    (att>=3?'<div class="mini">Elle attend depuis '+att+' jours. Si aucune de ces réponses '+
+      'ne colle, c\'est peut-être qu\'elle n\'est pas vraiment à toi de la faire.</div>':''),
+    function(box){
+      Array.prototype.forEach.call(box.querySelectorAll("[data-r]"),function(b){
+        b.onclick=function(){
+          var r=b.dataset.r;
+          fermer();
+          if(r==="gros") diviser(x.id);
+          else if(r==="moment") contrat(x.id);
+          else if(r==="autre") choisirPrioritaire();
+          else if(r==="temps") demarrer(Object.assign({},T()[x.id],{id:x.id}));
+          else if(r==="plus"){
+            if(T()[x.id]) T()[x.id].annule=now();
+            patch("/tasks/"+x.id,{annule:now(),revu:now()}).then(function(){
+              toast("Retirée — sans crédit."); rendre();
+            });
+          }
+        };
+      });
+    });
+}
+
+/* « Autre chose est plus urgent » : encore faut-il nommer cette autre chose,
+   sinon la phrase ne sert qu'à justifier l'arrêt. */
+function choisirPrioritaire(){
+  var tous=candidats().sort(function(a,b){ return scorer(b)-scorer(a); });
+  modale('<h3>Qu\'est-ce qui passe avant ?</h3>'+
+    '<div class="lb">Elle sera marquée prioritaire et te sera proposée en premier.</div>'+
+    '<input class="champ" id="cpQ" placeholder="🔎 chercher…" autocomplete="off">'+
+    '<div id="cpList" style="max-height:50vh;overflow:auto;margin:0 -2px"></div>',
+    function(box){
+      var q=box.querySelector("#cpQ"), zone=box.querySelector("#cpList");
+      function dessiner(){
+        var f=sansAccents(q.value).trim();
+        var sel=tous.filter(function(y){ return correspond(y,f); }).slice(0,40);
+        zone.innerHTML=sel.length?sel.map(function(y){
+          return '<div class="tache" data-pp="'+esc(y.id)+'"><div class="corps">'+
+            '<div class="txt">'+esc(y.t)+'</div><div class="ss"><span>'+hm(y.m||15)+
+            '</span><span>'+esc(y.c||"")+'</span></div></div></div>';
+        }).join(""):'<div class="slot">rien qui correspond</div>';
+        Array.prototype.forEach.call(zone.querySelectorAll("[data-pp]"),function(n){
+          n.onclick=function(){ fermer(); basculerPrio(n.dataset.pp); };
+        });
+      }
+      q.oninput=dessiner; dessiner();
+    });
 }
 
 /* ---------- CHANTIERS : les projets qui ne se cochent pas ---------- */
