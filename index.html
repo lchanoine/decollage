@@ -239,6 +239,9 @@ h1,h2,h3,p{margin:0}
   font-size:13px;background:var(--surf2);opacity:.5;transition:.15s}
 .lk.on{opacity:1;background:rgba(94,200,255,.20);box-shadow:inset 0 0 0 1px rgba(94,200,255,.35)}
 .lk:active{transform:scale(.9)}
+/* couper une tâche en morceaux : le geste qui débloque, donc toujours à portée */
+.lk.cut{color:var(--flamme);opacity:.72}
+.lk.cut:active{background:rgba(255,138,43,.2)}
 
 /* ---------- pourquoi ---------- */
 .reve{border-radius:var(--r);padding:15px;margin-top:11px;background:var(--surf);border:1px solid var(--bord)}
@@ -262,10 +265,17 @@ nav button.on{color:var(--txt)} nav button.on .e{filter:none}
 nav .pip{position:absolute;top:3px;right:16%;width:7px;height:7px;border-radius:50%;background:var(--flamme)}
 
 /* ---------- divers ---------- */
-.toast{position:fixed;left:50%;bottom:calc(100px + var(--sb));transform:translate(-50%,14px);z-index:90;
+.toast{position:fixed;left:50%;bottom:calc(100px + var(--sb));transform:translate(-50%,14px);z-index:96;
   background:#161f3c;border:1px solid var(--bord);border-radius:12px;padding:11px 16px;font-size:14px;
-  opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;box-shadow:0 14px 32px -14px #000}
+  opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;box-shadow:0 14px 32px -14px #000;
+  display:flex;align-items:center;gap:12px;justify-content:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+/* un toast qui porte une action reste cliquable : c'est le filet de sécurité
+   d'une case cochée par erreur */
+.toast.agir{pointer-events:auto}
+.toast .undo{flex:0 0 auto;padding:6px 11px;border-radius:9px;background:var(--surf2);
+  border:1px solid var(--bord);font-size:13px;font-weight:700;color:var(--flamme)}
+.toast .undo:active{background:rgba(255,138,43,.2)}
 .modal{position:fixed;inset:0;z-index:80;background:rgba(4,6,15,.74);backdrop-filter:blur(6px);
   display:flex;align-items:flex-end;justify-content:center}
 .feuille{width:100%;max-width:540px;background:#0d1428;border:1px solid var(--bord);border-bottom:0;
@@ -392,8 +402,20 @@ function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localSt
 function rid(n){ var a=new Uint8Array(n||8); crypto.getRandomValues(a);
   return Array.prototype.map.call(a,function(b){ return pad(b.toString(16)); }).join(""); }
 function hm(m){ if(m<60) return m+" min"; var h=Math.floor(m/60), r=m%60; return h+" h"+(r?" "+pad(r):""); }
-function toast(m){ var t=el("toast"); t.textContent=m; t.classList.add("on");
+function toast(m){ var t=el("toast"); t.textContent=m; t.classList.remove("agir"); t.classList.add("on");
   clearTimeout(toast._h); toast._h=setTimeout(function(){t.classList.remove("on");},2800); }
+/* Un toast qui porte un bouton. Sert au « annuler » qui suit chaque cochage :
+   une case cochée par erreur doit se défaire là où on vient de la cocher,
+   pas dans un filtre qu'il faut d'abord découvrir. */
+function toastAction(m,label,fn,ms){
+  var t=el("toast");
+  t.innerHTML='<span>'+esc(m)+'</span><button class="undo" id="tUndo">'+esc(label)+'</button>';
+  t.classList.add("on","agir");
+  var b=el("tUndo");
+  if(b) b.onclick=function(){ t.classList.remove("on","agir"); fn(); };
+  clearTimeout(toast._h);
+  toast._h=setTimeout(function(){ t.classList.remove("on","agir"); },ms||7000);
+}
 function vibre(p){ try{ navigator.vibrate&&navigator.vibrate(p); }catch(e){} }
 
 /* ============================================================
@@ -423,7 +445,10 @@ async function ecrire(m,p,b){
 }
 function patch(p,o){ return ecrire("PATCH",p,o); }
 function put(p,v){ return ecrire("PUT",p,v); }
-function pousser(n,o){ var w={}; w[rid(6)]=o; return patch("/"+n,w); }
+/* renvoie la clé créée : c'est ce qui permet de défaire un geste enregistré
+   par erreur, sans quoi l'altitude compterait un geste fantôme */
+function pousser(n,o){ var k=rid(6), w={}; w[k]=o;
+  return patch("/"+n,w).then(function(){ return k; }); }
 
 function appliquer(type,path,data){
   if(type!=="put"&&type!=="patch") return;
@@ -845,7 +870,33 @@ async function demarrer(x){
   rendre();
 }
 async function marquerGeste(x,sec){
-  await pousser("gestes",{ ts:now(), id:x.id, t:x.t, sec:Math.round(sec||GESTE_SEC) });
+  return await pousser("gestes",{ ts:now(), id:x.id, t:x.t, sec:Math.round(sec||GESTE_SEC) });
+}
+
+/* ---------- DÉFAIRE UN COCHAGE ----------
+   Cocher est un geste à un doigt : il part tout seul. Il faut donc pouvoir le
+   défaire là où il a été fait, tout de suite, sans aller chercher un filtre.
+   On remet la tâche dans la liste, on efface le geste qu'elle a créé, et on
+   rouvre le chantier qu'elle avait refermé en tombant. */
+async function decocher(id,cleGeste){
+  var x=T()[id]; if(!x) return;
+  x.fait=null; if(x.vieux) x.vieux=null;
+  await patch("/tasks/"+id,{fait:null,vieux:null});
+  if(cleGeste){
+    await put("/gestes/"+cleGeste,null);
+    if(db.gestes) delete db.gestes[cleGeste];
+  }
+  /* si sa chute avait refermé un chantier — et éventuellement le chantier
+     au-dessus — on remonte toute la chaîne pour les rouvrir */
+  var cur=x, garde=0;
+  while(cur&&cur.parent&&garde++<12){
+    var p=T()[cur.parent];
+    if(p&&p.fait){ p.fait=null; await patch("/tasks/"+cur.parent,{fait:null}); }
+    cur=p;
+  }
+  vibre(10);
+  toast("Remise dans la liste.");
+  rendre();
 }
 /* Quand la dernière étape d'un chantier tombe, le chantier se ferme tout seul :
    il n'y a rien de plus démoralisant qu'un projet fini qui traîne encore. */
@@ -859,7 +910,11 @@ async function fermerParent(x){
   /* On applique tout de suite en local : l'écho du flux peut arriver après,
      et l'écran ne doit pas afficher un chantier ouvert qui vient de fermer. */
   if(T()[x.parent]) T()[x.parent].fait=t;
-  var o=Object.assign({},p); o.id=x.parent; return o;
+  var o=Object.assign({},p); o.id=x.parent;
+  /* un chantier peut lui-même être l'étape d'un chantier plus grand : on
+     remonte tant que la dernière pièce tombe, et on annonce le plus haut */
+  var haut=await fermerParent(o);
+  return haut||o;
 }
 
 async function terminer(x,min){
@@ -872,8 +927,14 @@ async function terminer(x,min){
   await patch("/tasks/"+x.id,maj);
   await put("/live",null);
   var p=await fermerParent(x);
-  if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
+  setTimeout(function(){
+    if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
+    else toastAction("Réglé.","annuler",function(){ decocher(x.id,null); });
+  },1800);
+  if(p) setTimeout(function(){
+    toastAction("Réglé.","annuler",function(){ decocher(x.id,null); });
+  },3600);
 }
 async function stopper(x,gagne){
   await put("/live",null);
@@ -891,10 +952,17 @@ async function basculer(x){
   if(T()[x.id]) T()[x.id].fait=t;
   celebrer(x,true);
   await patch("/tasks/"+x.id,{fait:t});
-  await marquerGeste(x,0);
+  var cle=await marquerGeste(x,0);
   var p=await fermerParent(x);
-  if(p) setTimeout(function(){ celebrer(p,true); toast("Chantier terminé : "+p.t); },1800);
   rendre();
+  /* le filet de sécurité, après la fête pour ne pas la couvrir */
+  setTimeout(function(){
+    if(p){ celebrer(p,true); toast("Chantier terminé : "+p.t); }
+    else toastAction("Réglé.","annuler",function(){ decocher(x.id,cle); });
+  },1800);
+  if(p) setTimeout(function(){
+    toastAction("Réglé.","annuler",function(){ decocher(x.id,cle); });
+  },3600);
 }
 
 /* ---------- MASQUER EN UN SEUL GESTE ----------
@@ -916,6 +984,28 @@ async function basculerPriveReve(k){
   toast(p?"🔒 Caché — le lien invité ne le voit plus":"👁 Visible par le lien invité");
   rendre();
 }
+/* ---------- DIVISER N'IMPORTE QUOI, N'IMPORTE QUAND ----------
+   Une tâche trop grosse est la première cause de blocage. Il ne doit donc pas
+   falloir la « convertir en chantier » dans un sous-menu avant de pouvoir la
+   couper : le geste doit être à portée de doigt, sur la ligne elle-même.
+   Ça marche aussi sur une étape — une étape qui se révèle trop grosse devient
+   à son tour un chantier, sans limite de profondeur. */
+async function diviser(id){
+  var x=T()[id]; if(!x) return;
+  if(!x.chantier){
+    x.chantier=1;
+    await patch("/tasks/"+id,{chantier:1});
+  }
+  decouper(id);
+}
+function boutonDiviser(id){
+  /* pas au témoin : découper la liste de quelqu'un d'autre n'est pas son rôle,
+     et c'est une modification structurelle, pas un encouragement */
+  if(maman) return "";
+  return '<button class="lk cut" data-cut="'+esc(id)+'" '+
+    'title="Diviser en étapes" aria-label="Diviser en étapes">✂</button>';
+}
+
 /* Le bouton lui-même. Jamais affiché au témoin : chez lui, ce qui est caché
    n'existe pas, et le reste n'a pas de cadenas à basculer. */
 function boutonLock(id,prive){
@@ -1241,6 +1331,8 @@ function rendreFocus(){
         ? '<button class="btn plein" id="a1">Je continue</button>'+
           '<button class="btn go" id="a2">J\'arrête ici — c\'est gagné</button>'
         : '<button class="btn go" id="a1b">C\'est déjà fait ✓</button>'+
+          /* le moment exact où il bloque : c'est là que couper doit être offert */
+          '<button class="btn gris" id="a3b">✂ Trop gros — je le divise</button>'+
           '<button class="btn gris" id="a2b">Pas capable là</button>';
       if(el("a1")) el("a1").onclick=function(){
         marquerGeste(x||{id:L2.id,t:L2.t},GESTE_SEC);
@@ -1248,6 +1340,9 @@ function rendreFocus(){
       };
       if(el("a2")) el("a2").onclick=function(){ marquerGeste(x||{id:L2.id,t:L2.t},GESTE_SEC); stopper(x,true); };
       if(el("a1b")) el("a1b").onclick=function(){ marquerGeste(x||{id:L2.id,t:L2.t},GESTE_SEC); terminer(x,(now()-L2.debut)/6e4); };
+      if(el("a3b")) el("a3b").onclick=function(){
+        put("/live",null).then(function(){ rendre(); diviser(L2.id); });
+      };
       if(el("a2b")) el("a2b").onclick=function(){ reporter(x); };
     }else{
       A.innerHTML='<button class="btn go" id="b1">C\'est fait ✓</button>'+
@@ -1294,17 +1389,25 @@ function ouvrirChantier(id){
         '<div class="jauge" style="margin:4px 0 12px"><i style="width:'+Math.round(av.fait/av.total*100)+'%"></i></div>'
        :'<div class="lb">Pas encore découpé.</div>')+
     '<div id="etList">'+(t.length?t.map(function(x){
-      return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'">'+
+      /* une étape peut elle-même avoir été redécoupée : on montre alors sa
+         propre progression et on l'ouvre au lieu de la lancer */
+      var sous=estChantier(x)?avanceChantier(x.id):null;
+      return '<div class="tache'+(x.fait?" faite":"")+'" data-id="'+esc(x.id)+'"'+
+        (sous?' data-sous="'+esc(x.id)+'"':'')+'>'+
         '<div class="case">'+(x.fait?"✓":"")+'</div>'+
         '<div class="corps"><div class="txt">'+esc(x.t)+'</div>'+
-        '<div class="ss"><span>'+hm(x.m||15)+'</span></div></div>'+
-        (x.fait?'':'<div class="go">Go</div>')+'</div>';
+        '<div class="ss"><span>'+(sous?sous.fait+' / '+sous.total+' étapes':hm(x.m||15))+'</span></div>'+
+        (sous?'<div class="jauge" style="margin:7px 0 0"><i style="width:'+Math.round(sous.fait/sous.total*100)+'%"></i></div>':'')+
+        '</div>'+
+        (x.fait?'':boutonDiviser(x.id))+
+        (x.fait?'':'<div class="go">'+(sous?'Ouvrir':'Go')+'</div>')+'</div>';
     }).join(""):'<div class="slot">aucune étape pour l\'instant</div>')+'</div>'+
     '<button class="btn plein" id="cAdd" style="margin-top:12px">＋ Ajouter des étapes</button>'+
     '<div class="mini">Un chantier ne se coche pas lui-même : il se ferme tout seul quand ses étapes sont finies.</div>',
     function(box){
       /* Les actions faites depuis l'intérieur d'un chantier doivent le
          redessiner : sinon la progression affichée ment le temps d'un clic. */
+      brancherLocks(box);
       Array.prototype.forEach.call(box.querySelectorAll(".tache[data-id]"),function(n){
         var x=T()[n.dataset.id]; if(!x) return;
         x=Object.assign({},x); x.id=n.dataset.id;
@@ -1312,7 +1415,11 @@ function ouvrirChantier(id){
         if(ca) ca.onclick=function(e){ e.stopPropagation();
           basculer(x).then(function(){ if(T()[id]&&!T()[id].fait) ouvrirChantier(id); else fermer(); }); };
         var g=n.querySelector(".go");
-        if(g) g.onclick=function(e){ e.stopPropagation(); fermer(); demarrer(x); };
+        if(g) g.onclick=function(e){ e.stopPropagation();
+          /* une étape redécoupée s'ouvre, elle ne se lance pas */
+          if(n.dataset.sous) ouvrirChantier(n.dataset.sous);
+          else { fermer(); demarrer(x); }
+        };
       });
       box.querySelector("#cAdd").onclick=function(){ decouper(id); };
     });
@@ -1385,7 +1492,13 @@ function rendreMenage(){
 
   el("mOk").onclick=function(){
     menageVus++;
-    patch("/tasks/"+x.id,{fait:now(),vieux:1,revu:now()}).then(function(){ celebrer(x,true,true); rendreMenage(); });
+    patch("/tasks/"+x.id,{fait:now(),vieux:1,revu:now()}).then(function(){
+      if(T()[x.id]){ T()[x.id].fait=now(); T()[x.id].vieux=1; }
+      celebrer(x,true,true); rendreMenage();
+      setTimeout(function(){
+        toastAction("Déjà réglé.","annuler",function(){ decocher(x.id,null); menageVus--; rendreMenage(); });
+      },1500);
+    });
   };
   el("mGarde").onclick=function(){
     menageVus++; patch("/tasks/"+x.id,{revu:now()}).then(rendreMenage);
@@ -1422,7 +1535,8 @@ function rendreListe(){
   if(filtre==="fait"){
     var f=l.filter(function(x){ return x.fait; }).sort(function(a,b){ return b.fait-a.fait; });
     htm+='<div class="carte" style="margin-top:0"><div class="tit">'+f.length+' réglées depuis le début</div>'+
-      (f.length?'':'<div class="rien">Ça commence aujourd\'hui.</div>')+'</div>';
+      (f.length?'<div class="aide">Touche la case verte pour remettre une tâche dans la liste.</div>'
+               :'<div class="rien">Ça commence aujourd\'hui.</div>')+'</div>';
     htm+=f.slice(0,60).map(ligne).join("");
   }
   else if(filtre.indexOf("c:")===0){
@@ -1471,7 +1585,11 @@ function ligne(x){
       '<span>'+hm(x.m||15)+'</span><span>'+esc(x.c||"")+'</span>'+
       ((x.reports||0)>=2?'<span style="color:var(--jaune)">reportée '+x.reports+'×</span>':'')+
       (attendDepuis(x)?'<span style="color:var(--jaune)">prévue il y a '+attendDepuis(x)+' j</span>':'')+
-    '</div></div>'+boutonLock(x.id,x.prive)+(x.fait?'':'<div class="go">Go</div>')+'</div>';
+    '</div></div>'+
+    (x.fait?'':boutonDiviser(x.id))+boutonLock(x.id,x.prive)+
+    (x.fait
+      ? (estChantier(x)?'<div class="go" data-open="'+esc(x.id)+'">Ouvrir</div>':'')
+      : '<div class="go">Go</div>')+'</div>';
 }
 function brancherTaches(scope){
   brancherLocks(scope);
@@ -1482,7 +1600,12 @@ function brancherTaches(scope){
     var x=T()[n.dataset.id]; if(!x) return; x=Object.assign({},x); x.id=n.dataset.id;
     var c=n.querySelector(".case");
     if(c) c.onclick=function(e){ e.stopPropagation(); n.classList.add("pop"); basculer(x); };
-    var g=n.querySelector(".go"); if(g) g.onclick=function(e){ e.stopPropagation(); demarrer(x); };
+    var g=n.querySelector(".go");
+    if(g) g.onclick=function(e){ e.stopPropagation();
+      /* un chantier déjà fermé s'ouvre quand même : c'est le seul chemin vers
+         ses étapes si l'une d'elles a été cochée par erreur */
+      if(g.dataset.open) ouvrirChantier(g.dataset.open); else demarrer(x);
+    };
     /* toucher le texte ouvre les réglages de la tâche */
     var corps=n.querySelector(".corps");
     if(corps) corps.onclick=function(e){ e.stopPropagation(); editerTache(n.dataset.id); };
@@ -1491,6 +1614,9 @@ function brancherTaches(scope){
 /* Le cadenas doit couper le clic : sur une ligne, il est posé au milieu d'une
    zone qui ouvre le chantier ou la fiche. */
 function brancherLocks(scope){
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-cut]"),function(b){
+    b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); diviser(b.dataset.cut); };
+  });
   Array.prototype.forEach.call(scope.querySelectorAll("[data-lock]"),function(b){
     b.onclick=function(e){ e.stopPropagation(); e.preventDefault(); basculerPrive(b.dataset.lock); };
   });
@@ -1516,7 +1642,9 @@ function editerTache(id){
       return '<button class="dur'+((x.p||4)===p?" on":"")+'" data-p="'+p+'">'+LAB[p][0]+'</button>';
     }).join("")+'</div>'+
     '<button class="btn plein" id="eOk" style="margin-top:14px">Enregistrer</button>'+
-    (x.parent?'':'<button class="btn gris" id="eCh" style="margin-top:8px">🧱 '+(estChantier(x)?"Redevenir une tâche simple":"En faire un chantier à découper")+'</button>')+
+    '<button class="btn gris" id="eCut" style="margin-top:8px">✂ Diviser en plus petites étapes</button>'+
+    (estChantier(x)&&etapesToutes(id).length===0
+      ? '<button class="btn gris" id="eCh" style="margin-top:8px">Redevenir une tâche simple</button>' : '')+
     '<button class="btn gris" id="ePriv" style="margin-top:8px">'+
       (x.prive?'🔒 Cachée du témoin — la remontrer':'👁 Visible par le témoin — la cacher')+'</button>'+
     '<button class="btn gris" id="eSup" style="margin-top:8px;color:var(--rouge)">Ça ne s\'applique plus</button>'+
@@ -1537,10 +1665,11 @@ function editerTache(id){
         patch("/tasks/"+id,{ t:box.querySelector("#eT").value.trim()||x.t, m:mm, p:pp })
           .then(function(){ fermer(); rendre(); });
       };
+      box.querySelector("#eCut").onclick=function(){ fermer(); diviser(id); };
       if(box.querySelector("#eCh")) box.querySelector("#eCh").onclick=function(){
-        var dev=!estChantier(x);
-        patch("/tasks/"+id,{ chantier:dev?1:null }).then(function(){
-          fermer(); rendre(); if(dev) decouper(id);
+        patch("/tasks/"+id,{ chantier:null }).then(function(){
+          if(T()[id]) T()[id].chantier=null;
+          fermer(); rendre();
         });
       };
       box.querySelector("#ePriv").onclick=function(){
@@ -1572,7 +1701,7 @@ function slotPlan(id,jour){
       (x.geste?'<div class="gs">→ '+esc(x.geste)+'</div>':'')+
       (att&&!x.fait?'<div class="depuis">prévue <b>'+(att===1?"hier":"il y a "+att+" jours")+'</b> — elle reste là tant qu\'elle tient</div>':'')+
       (!x.fait&&(!x.quand||!x.geste)?'<div class="manque">à compléter : quand + premier geste</div>':'')+
-    '</span>'+boutonLock(id,x.prive)+
+    '</span>'+(x.fait?'':boutonDiviser(id))+boutonLock(id,x.prive)+
     '<button class="x" data-ed="'+esc(id)+'">✎</button>'+
     '<button class="x" data-del="'+esc(id)+'" data-jour="'+esc(jour)+'">×</button></div>';
 }
